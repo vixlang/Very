@@ -1,6 +1,6 @@
 from .base import Command
 import argparse
-from git import Repo
+from git import Repo,remote
 import re
 from pathlib import Path
 from ._utils import Config, log, VIndexTool
@@ -19,7 +19,30 @@ import shutil
     >>> vpm add fexcode.vnet            # 下载 github.com/fexcode/vnet 仓库
     >>> vpm add fexcode.vnet@master     # 下载 github.com/fexcode/vnet 仓库 master 分支
     >>> vpm add gitee.com/fexcode.vnet  # 下载 gitee.com/fexcode/vnet 仓库
+    >>> vpm add gitee/fexcode.vnet@master  # .com 可以省略
 """
+
+from tqdm import tqdm
+
+class TqdmProgress(remote.RemoteProgress):
+    def __init__(self):
+        super().__init__()
+        # 初始化时，tqdm 的总量未知，设为 None
+        self.pbar = tqdm(unit='objects', desc="Cloning")
+
+    def update(self, op_code, cur_count, max_count=None, message=''):
+        # 当首次获得总量时，初始化进度条的总量
+        if max_count and not self.pbar.total:
+            self.pbar.total = max_count
+        # 计算自上次更新以来的新增进度
+        new_count = cur_count - self.pbar.n
+        # 更新进度条
+        self.pbar.update(new_count)
+
+    def __del__(self):
+        # 对象销毁时关闭进度条
+        if hasattr(self, 'pbar'):
+            self.pbar.close()
 
 
 class AddCmd(Command):
@@ -32,6 +55,8 @@ class AddCmd(Command):
 
         if ":" in package_name:
             master, package_name = package_name.split(":")
+            if not "." in master:
+                master = master + ".com"
         else:
             master = "github.com"
 
@@ -54,22 +79,19 @@ class AddCmd(Command):
                 shutil.rmtree(PACK_PATH)
                 log.success(f"删除包 {package_name} 成功")
 
-        log.info(f"开始下载包 {package_name} ...")
+        log.info(f"开始下载包 https://{master}/{package_name} ...")
 
         Repo.clone_from(
             f"https://{master}/{package_name}",
             PACK_PATH,
             branch=branch,
+            progress=TqdmProgress()
         )
 
         log.info(f"下载包 {package_name} 成功，正在检查包信息 ...")
 
-        # if not (PACK_PATH / "vindex.toml").exists():
-        #     log.critical(f"包 {package_name} 不存在 vindex.toml 文件!")
-        #     return
-
         index = VIndexTool(PACK_PATH)
-        content=index.content(package_name=package_name)
+        content = index.content(package_name=package_name)
 
         log.success(f"增加包 {package_name} 成功")
         log.debug(content)
