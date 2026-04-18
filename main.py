@@ -29,7 +29,7 @@ class Vpm:
 
 
 vpm = Vpm(global_parser)
-vpm.register(cmd_list)
+vpm.register(cmds)
 
 
 if __name__ == "__main__":

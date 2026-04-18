@@ -7,8 +7,8 @@ from .utils import Config, log, VIndexTool, parse_pack_name
 import shutil
 
 
-包格式说明 = """
-|======================== vpm add 包格式说明 ========================|
+命令格式说明 = """
+|======================== vpm add 命令格式说明 ========================|
 [#] 格式为: 
 [>]     vpm add git主仓库地址:用户名.git仓库项目名@分支名
 [/] 
@@ -90,7 +90,7 @@ class AddCmd(Command):
         add_parser = p.add_parser(
             "add",
             help="添加包(需要git)",
-            epilog=包格式说明,
+            epilog=命令格式说明,
             formatter_class=argparse.RawDescriptionHelpFormatter,
         )
         add_parser.add_argument("package", help="需要添加的包名")

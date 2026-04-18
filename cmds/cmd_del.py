@@ -4,8 +4,8 @@ from .utils import log, parse_pack_name
 import shutil
 
 
-包格式说明 = """
-|======================== vpm del 包格式说明 ========================|
+命令格式说明 = """
+|======================== vpm del 命令格式说明 ========================|
 [#] 格式为: 
 [>]     vpm del git主仓库地址:用户名.git仓库项目名
 [/] 
@@ -52,7 +52,7 @@ class DelCmd(Command):
         del_parser = p.add_parser(
             "del",
             help="删除包",
-            epilog=包格式说明,
+            epilog=命令格式说明,
             formatter_class=argparse.RawDescriptionHelpFormatter,
         )
         del_parser.add_argument("package", help="需要删除的包名")
