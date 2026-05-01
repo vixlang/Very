@@ -5,3 +5,6 @@ uv.lock
 
 .vix
 .VSCodeCounter
+
+.env
+
