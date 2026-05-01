@@ -1,6 +1,5 @@
 from .base import Command
 import argparse
-from pathlib import Path
 from .utils import Config, log
 
 命令格式说明 = """

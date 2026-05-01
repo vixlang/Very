@@ -1,6 +1,5 @@
 from abc import ABC, abstractmethod
 import argparse
-from .utils import log
 
 
 class Command(ABC):

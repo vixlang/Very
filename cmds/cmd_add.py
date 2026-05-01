@@ -1,9 +1,7 @@
 from .base import Command
 import argparse
 from git import Repo, remote
-import re
-from pathlib import Path
-from .utils import Config, log, VIndexTool, parse_pack_name
+from .utils import log, VIndexTool, parse_pack_name
 import shutil
 
 命令格式说明 = """
