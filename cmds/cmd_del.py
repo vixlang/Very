@@ -3,7 +3,6 @@ import argparse
 from .utils import log, parse_pack_name
 import shutil
 
-
 命令格式说明 = """
 |======================== vpm del 命令格式说明 ========================|
 [#] 格式为: 
@@ -22,7 +21,6 @@ import shutil
 
 class DelCmd(Command):
     NAME = "del"
-
 
     def execute(self):
         package_name = getattr(self.namespace, "package", "unknown")
@@ -46,7 +44,6 @@ class DelCmd(Command):
         except Exception as e:
             log.error(f"删除包 {pack_info.full_name} 失败: {e}")
             return
-
 
     def set_parser(self, p: argparse._SubParsersAction) -> argparse.ArgumentParser:
         del_parser = p.add_parser(

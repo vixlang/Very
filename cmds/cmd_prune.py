@@ -3,7 +3,6 @@ import argparse
 from pathlib import Path
 from .utils import Config, log
 
-
 命令格式说明 = """
 |======================== vpm prune 命令格式说明 ========================|
 [#] 格式为:
@@ -26,7 +25,7 @@ class PruneCmd(Command):
         if not libs_path.exists():
             log.critical("包目录不存在!")
             return
-            
+
         removed_count = 0
         empty_dir_count = 0
 
@@ -50,24 +49,33 @@ class PruneCmd(Command):
                         # 检查是否存在vindex.toml
                         vindex_file = repo_dir / "vindex.toml"
                         if not vindex_file.exists():
-                            package_name = f"{master_dir.name}:{user_dir.name}.{repo_dir.name}"
+                            package_name = (
+                                f"{master_dir.name}:{user_dir.name}.{repo_dir.name}"
+                            )
                             log.warning(f"删除无效包: {package_name}")
 
                             # 删除整个仓库目录
                             import shutil
+
                             shutil.rmtree(repo_dir)
                             removed_count += 1
 
         # 如果不是只删除无效包，则清理空目录
         if not getattr(self.namespace, "invalid_only", False):
             # 清理空目录（只到包目录这一级）
-            master_dirs = sorted([d for d in libs_path.iterdir() if d.is_dir()], reverse=True)
+            master_dirs = sorted(
+                [d for d in libs_path.iterdir() if d.is_dir()], reverse=True
+            )
             for master_dir in master_dirs:
                 # 清理空的用户目录
-                user_dirs = sorted([d for d in master_dir.iterdir() if d.is_dir()], reverse=True)
+                user_dirs = sorted(
+                    [d for d in master_dir.iterdir() if d.is_dir()], reverse=True
+                )
                 for user_dir in user_dirs:
                     # 清理空的包目录
-                    repo_dirs = sorted([d for d in user_dir.iterdir() if d.is_dir()], reverse=True)
+                    repo_dirs = sorted(
+                        [d for d in user_dir.iterdir() if d.is_dir()], reverse=True
+                    )
                     for repo_dir in repo_dirs:
                         # 检查包目录是否为空
                         if not any(repo_dir.iterdir()):
@@ -93,7 +101,9 @@ class PruneCmd(Command):
         elif getattr(self.namespace, "invalid_only", False):
             log.info(f"清理完成，共删除 {removed_count} 个无效包")
         else:
-            log.info(f"清理完成，共删除 {removed_count} 个无效包和 {empty_dir_count} 个空目录")
+            log.info(
+                f"清理完成，共删除 {removed_count} 个无效包和 {empty_dir_count} 个空目录"
+            )
 
     def set_parser(self, p: argparse._SubParsersAction) -> argparse.ArgumentParser:
         prune_parser = p.add_parser(
@@ -103,13 +113,9 @@ class PruneCmd(Command):
             formatter_class=argparse.RawDescriptionHelpFormatter,
         )
         prune_parser.add_argument(
-            "--empty-only",
-            action="store_true",
-            help="只删除空目录"
+            "--empty-only", action="store_true", help="只删除空目录"
         )
         prune_parser.add_argument(
-            "--invalid-only",
-            action="store_true",
-            help="只删除没有vindex.toml的包"
+            "--invalid-only", action="store_true", help="只删除没有vindex.toml的包"
         )
         return prune_parser

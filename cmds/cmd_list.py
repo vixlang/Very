@@ -3,7 +3,6 @@ import argparse
 from pathlib import Path
 from .utils import Config, log
 
-
 命令格式说明 = """
 |======================== vpm list 命令格式说明 ========================|
 [#] 格式为: 
@@ -101,8 +100,6 @@ class ListCmd(Command):
             formatter_class=argparse.RawDescriptionHelpFormatter,
         )
         list_parser.add_argument(
-            "-t", "--tree",
-            action="store_true",
-            help="以树形结构显示包列表"
+            "-t", "--tree", action="store_true", help="以树形结构显示包列表"
         )
         return list_parser
