@@ -6,6 +6,7 @@ import shutil
 from dataclasses import dataclass
 
 console = Console()
+err_console = Console(file=sys.stderr)
 
 
 class Logger:
@@ -19,16 +20,15 @@ class Logger:
         console.print(f"[yellow][WARNING][/yellow]\t{msg}")
 
     def error(self, msg):
-        console.print(f"[red][ERROR][/red]\t\t{msg}", file=sys.stderr)
+        err_console.print(f"[red][ERROR][/red]\t\t{msg}")
 
     def debug(self, msg):
         console.print(f"[magenta][DEBUG][/magenta]\t{msg}")
 
     def critical(self, msg):
         """不可恢复的错误，直接退出"""
-        console.print(
+        err_console.print(
             f"[bold red]====== [CRITICAL] {msg} ======[/bold red]",
-            file=sys.stderr,
         )
         exit(1)
 
