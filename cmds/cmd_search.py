@@ -24,6 +24,18 @@ class SearchCmd(Command):
     def execute(self):
         keyword = getattr(self.namespace, "keyword", "")
         no_cache = getattr(self.namespace, "no_cache", False)
+        clear_cache = getattr(self.namespace, "clear_cache", False)
+        cache_status = getattr(self.namespace, "cache_status", False)
+        
+        # 处理缓存清理命令
+        if clear_cache:
+            self.clear_cache()
+            return
+        
+        # 处理缓存状态查询
+        if cache_status:
+            self.show_cache_status()
+            return
         
         log.section(f"搜索包: {keyword if keyword else '全部'}")
         
@@ -178,33 +190,50 @@ class SearchCmd(Command):
             log.debug(f"保存缓存失败: {e}")
 
     def fetch_github_packages(self):
-        """从 GitHub API 获取 vixlang 组织下的所有仓库"""
-        url = "https://api.github.com/orgs/vixlang/repos?per_page=100&type=sources"
+        """从 GitHub API 获取 vixlang 组织下的所有仓库（支持分页）"""
+        packages = []
+        page = 1
+        per_page = 100
         
-        headers = {
-            'Accept': 'application/vnd.github.v3+json',
-            'User-Agent': 'Vpm-Package-Manager'
-        }
-        
-        req = urllib.request.Request(url, headers=headers)
-        
-        with urllib.request.urlopen(req, timeout=10) as response:
-            data = json.loads(response.read().decode('utf-8'))
+        while True:
+            url = f"https://api.github.com/orgs/vixlang/repos?per_page={per_page}&page={page}&type=sources"
             
-            # 过滤出 vix 包（通常以 vlib- 开头）
-            packages = []
-            for repo in data:
-                if repo['name'].startswith('vlib-') or repo['name'] == 'vpm':
-                    packages.append({
-                        'name': repo['name'],
-                        'description': repo['description'] or '无描述',
-                        'stars': repo['stargazers_count'],
-                        'language': repo['language'] or 'Unknown',
-                        'updated': repo['updated_at'][:10],
-                        'url': repo['html_url']
-                    })
+            headers = {
+                'Accept': 'application/vnd.github.v3+json',
+                'User-Agent': 'Vpm-Package-Manager'
+            }
             
-            return packages
+            req = urllib.request.Request(url, headers=headers)
+            
+            with urllib.request.urlopen(req, timeout=10) as response:
+                data = json.loads(response.read().decode('utf-8'))
+                
+                # 如果没有数据，说明已经到最后一页
+                if not data:
+                    break
+                
+                # 过滤出 vix 包（通常以 vlib- 开头）
+                for repo in data:
+                    if repo['name'].startswith('vlib-') or repo['name'] == 'vpm':
+                        packages.append({
+                            'name': repo['name'],
+                            'description': repo['description'] or '无描述',
+                            'stars': repo['stargazers_count'],
+                            'language': repo['language'] or 'Unknown',
+                            'updated': repo['updated_at'][:10],
+                            'url': repo['html_url']
+                        })
+                
+                # 如果返回的数据少于 per_page，说明已经是最后一页
+                if len(data) < per_page:
+                    break
+                
+                page += 1
+        
+        # 按星标数降序排序
+        packages.sort(key=lambda x: x['stars'], reverse=True)
+        
+        return packages
 
     def display_results(self, packages):
         """显示搜索结果"""
@@ -245,6 +274,70 @@ class SearchCmd(Command):
         )
         console.print()
 
+    def clear_cache(self):
+        """清理缓存文件"""
+        log.section("清理缓存")
+        
+        if not self.CACHE_FILE.exists():
+            log.info("缓存文件不存在，无需清理")
+            return
+        
+        try:
+            # 获取缓存文件大小
+            cache_size = self.CACHE_FILE.stat().st_size
+            cache_size_kb = cache_size / 1024
+            
+            # 删除缓存文件
+            self.CACHE_FILE.unlink()
+            
+            log.success(f"缓存已清理")
+            log.info(f"释放空间: {cache_size_kb:.2f} KB")
+            
+        except Exception as e:
+            log.error(f"清理缓存失败: {e}")
+
+    def show_cache_status(self):
+        """显示缓存状态"""
+        log.section("缓存状态")
+        
+        if not self.CACHE_FILE.exists():
+            log.info("缓存文件不存在")
+            log.info("运行 [green]vpm search[/green] 将自动创建缓存")
+            return
+        
+        try:
+            with open(self.CACHE_FILE, 'r', encoding='utf-8') as f:
+                cache_data = json.load(f)
+            
+            timestamp = cache_data['timestamp']
+            packages_count = len(cache_data['packages'])
+            cache_age = time.time() - timestamp
+            cache_size = self.CACHE_FILE.stat().st_size
+            cache_size_kb = cache_size / 1024
+            
+            # 计算过期时间
+            remaining_time = self.CACHE_EXPIRY - cache_age
+            if remaining_time > 0:
+                remaining_minutes = int(remaining_time / 60)
+                status = f"[green]有效[/green]（剩余 {remaining_minutes} 分钟）"
+            else:
+                status = "[red]已过期[/red]"
+            
+            # 格式化时间
+            from datetime import datetime
+            cache_time = datetime.fromtimestamp(timestamp).strftime('%Y-%m-%d %H:%M:%S')
+            
+            console.print()
+            console.print(f"缓存文件: [cyan]{self.CACHE_FILE}[/cyan]")
+            console.print(f"创建时间: [white]{cache_time}[/white]")
+            console.print(f"缓存大小: [yellow]{cache_size_kb:.2f} KB[/yellow]")
+            console.print(f"包数量: [magenta]{packages_count}[/magenta]")
+            console.print(f"状态: {status}")
+            console.print()
+            
+        except Exception as e:
+            log.error(f"读取缓存状态失败: {e}")
+
     def set_parser(self, p: argparse._SubParsersAction) -> argparse.ArgumentParser:
         search_parser = p.add_parser(
             "search",
@@ -261,5 +354,15 @@ class SearchCmd(Command):
             "--no-cache",
             action="store_true",
             help="不使用缓存，强制从 GitHub 获取最新数据"
+        )
+        search_parser.add_argument(
+            "--clear-cache",
+            action="store_true",
+            help="清理本地缓存文件"
+        )
+        search_parser.add_argument(
+            "--cache-status",
+            action="store_true",
+            help="查看缓存状态信息"
         )
         return search_parser
