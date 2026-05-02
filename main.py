@@ -1,9 +1,60 @@
 from cmds import cmds, Command, log, console
 from rich.panel import Panel
+from rich.text import Text
+from rich.console import Console
 
 import argparse
+import sys
 
-global_parser = argparse.ArgumentParser()
+# 从 pyproject.toml 读取版本号
+try:
+    import tomllib
+    from pathlib import Path
+    
+    pyproject_path = Path(__file__).parent / "pyproject.toml"
+    with open(pyproject_path, "rb") as f:
+        pyproject_data = tomllib.load(f)
+    VERSION = pyproject_data.get("project", {}).get("version", "unknown")
+except Exception:
+    VERSION = "0.2.0"  #  fallback 版本
+
+def show_version():
+    """显示彩色版本信息"""
+    console = Console()
+    
+    console.print()
+    
+    # 创建彩色的版本信息
+    text = Text()
+    text.append("╭─────────────────────────────────────╮\n", style="bold cyan")
+    text.append("│  ", style="cyan")
+    text.append("VPM", style="bold bright_cyan")
+    text.append("  ", style="cyan")
+    text.append("v", style="dim white")
+    text.append(VERSION, style="bold bright_green")
+    text.append("                        │\n", style="cyan")
+    text.append("│  ", style="cyan")
+    text.append("Vix", style="bold yellow")
+    text.append(" ", style="white")
+    text.append("包管理器", style="bright_white")
+    text.append("                       │\n", style="cyan")
+    text.append("╰─────────────────────────────────────╯", style="bold cyan")
+    
+    console.print(text)
+    console.print()
+    
+    sys.exit(0)
+
+global_parser = argparse.ArgumentParser(
+    prog="vpm",
+    description="Vix 包管理器",
+    epilog="使用 'vpm <命令> --help' 查看命令的详细信息"
+)
+global_parser.add_argument(
+    "-v", "--version",
+    action="store_true",
+    help="显示版本号"
+)
 subparsers = global_parser.add_subparsers(dest="subcommand", help="[可用命令]")
 
 
@@ -62,6 +113,10 @@ def print_banner():
 
 if __name__ == "__main__":
     args = global_parser.parse_args()
+
+    # 处理版本参数
+    if hasattr(args, 'version') and args.version:
+        show_version()
 
     if not hasattr(args, "subcommand") or not args.subcommand:
         print_banner()
