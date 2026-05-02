@@ -80,7 +80,8 @@ class Vpm:
                     f"  [red]del[/red]     - 删除包\n"
                     f"  [cyan]list[/cyan]   - 列出已安装的包\n"
                     f"  [yellow]prune[/yellow]  - 清理无效包和空目录\n"
-                    f"  [magenta]init[/magenta]   - 初始化新项目\n\n"
+                    f"  [magenta]init[/magenta]   - 初始化新项目\n"
+                    f"  [blue]search[/blue] - 搜索可用的包\n\n"
                     f"[dim]使用 [white]vpm <命令> --help[/white] 查看命令的详细信息[/dim]",
                     title="[bold red]✘ 错误[/bold red]",
                     border_style="red",
@@ -128,7 +129,8 @@ def print_banner():
             "  [red]del[/red]     删除包\n"
             "  [cyan]list[/cyan]   列出已安装的包\n"
             "  [yellow]prune[/yellow]  清理无效包和空目录\n"
-            "  [magenta]init[/magenta]   初始化新项目",
+            "  [magenta]init[/magenta]   初始化新项目\n"
+            "  [blue]search[/blue] 搜索可用的包",
             title="[bold]VPM[/bold]",
             border_style="cyan",
             padding=(1, 2),
@@ -139,7 +141,8 @@ def print_banner():
         Panel(
             "  [bold red]del[/bold red]      删除已安装的包\n\n"
             "  [bold cyan]list[/bold cyan]    列出所有已安装的包\n\n"
-            "  [bold yellow]prune[/bold yellow]  清理无效包和空目录",
+            "  [bold yellow]prune[/bold yellow]  清理无效包和空目录\n\n"
+            "  [bold blue]search[/bold blue]  搜索可用的包",
             border_style="cyan",
             padding=(1, 2),
         )
