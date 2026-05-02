@@ -41,7 +41,8 @@ def print_banner():
             "  [green]add[/green]    添加包\n"
             "  [red]del[/red]     删除包\n"
             "  [cyan]list[/cyan]   列出已安装的包\n"
-            "  [yellow]prune[/yellow]  清理无效包和空目录",
+            "  [yellow]prune[/yellow]  清理无效包和空目录\n"
+            "  [magenta]init[/magenta]   初始化新项目",
             title="[bold]VPM[/bold]",
             border_style="blue",
             padding=(1, 2),
