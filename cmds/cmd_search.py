@@ -5,6 +5,8 @@ import urllib.request
 import json
 from rich.table import Table
 from rich.panel import Panel
+from rich.live import Live
+from rich.spinner import Spinner
 from pathlib import Path
 import time
 
@@ -26,6 +28,8 @@ class SearchCmd(Command):
         no_cache = getattr(self.namespace, "no_cache", False)
         clear_cache = getattr(self.namespace, "clear_cache", False)
         cache_status = getattr(self.namespace, "cache_status", False)
+        sort_by = getattr(self.namespace, "sort", "stars")
+        limit = getattr(self.namespace, "limit", None)
         
         # 处理缓存清理命令
         if clear_cache:
@@ -67,7 +71,14 @@ class SearchCmd(Command):
                 log.warning(f"未找到包含 '{keyword}' 的包")
                 return
             
-            self.display_results(filtered)
+            # 排序
+            filtered = self.sort_packages(filtered, sort_by)
+            
+            # 限制显示数量
+            if limit and limit > 0:
+                filtered = filtered[:limit]
+            
+            self.display_results(filtered, sort_by)
             
         except Exception as e:
             log.error(
@@ -75,6 +86,21 @@ class SearchCmd(Command):
                 "[yellow]请检查:[/yellow]\n  • 网络连接是否正常\n  • GitHub API 是否可访问"
             )
             return
+
+    def sort_packages(self, packages, sort_by):
+        """根据指定字段排序包列表"""
+        if sort_by == "stars":
+            # 按星标数降序
+            return sorted(packages, key=lambda x: x['stars'], reverse=True)
+        elif sort_by == "updated":
+            # 按更新时间降序
+            return sorted(packages, key=lambda x: x['updated'], reverse=True)
+        elif sort_by == "name":
+            # 按名称升序
+            return sorted(packages, key=lambda x: x['name'].lower())
+        else:
+            # 默认按星标数
+            return sorted(packages, key=lambda x: x['stars'], reverse=True)
 
     def fetch_with_retry(self):
         """带重试机制的 API 调用"""
@@ -86,7 +112,11 @@ class SearchCmd(Command):
                     log.info(f"重试第 {attempt - 1} 次...")
                     time.sleep(self.RETRY_DELAY)
                 
-                return self.fetch_github_packages()
+                # 显示加载动画
+                with Live(Spinner("dots", text="正在从 GitHub 获取数据..."), refresh_per_second=10, transient=True):
+                    result = self.fetch_github_packages()
+                
+                return result
                 
             except urllib.error.HTTPError as e:
                 last_exception = e
@@ -235,7 +265,7 @@ class SearchCmd(Command):
         
         return packages
 
-    def display_results(self, packages):
+    def display_results(self, packages, sort_by="stars"):
         """显示搜索结果"""
         table = Table(show_header=True, header_style="bold cyan")
         table.add_column("包名", style="green", width=25)
@@ -261,7 +291,14 @@ class SearchCmd(Command):
         console.print()
         
         # 显示统计信息
-        log.success(f"共找到 {len(packages)} 个包")
+        sort_labels = {
+            "stars": "星标数",
+            "updated": "更新时间",
+            "name": "名称"
+        }
+        sort_label = sort_labels.get(sort_by, "星标数")
+        
+        log.success(f"共找到 {len(packages)} 个包（按{sort_label}排序）")
         console.print()
         console.print(
             Panel(
@@ -364,5 +401,17 @@ class SearchCmd(Command):
             "--cache-status",
             action="store_true",
             help="查看缓存状态信息"
+        )
+        search_parser.add_argument(
+            "--sort",
+            choices=["stars", "updated", "name"],
+            default="stars",
+            help="排序方式：stars(星标数), updated(更新时间), name(名称)，默认按星标数"
+        )
+        search_parser.add_argument(
+            "--limit",
+            type=int,
+            default=None,
+            help="限制显示的包数量"
         )
         return search_parser
