@@ -91,7 +91,7 @@ class AddCmd(Command):
                     progress=git_progress,
                 )
             except Exception as e:
-                log.error(f"下载失败: {e}")
+                log.error(f"下载失败\n\n[white]{str(e)}[/white]\n\n[yellow]请检查:[/yellow]\n  • 网络连接是否正常\n  • 仓库地址是否正确\n  • 是否有访问权限")
                 return
 
         log.info("正在检查包信息...")

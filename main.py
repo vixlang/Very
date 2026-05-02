@@ -1,4 +1,5 @@
 from cmds import cmds, Command, log, console
+from cmds.utils import err_console
 from rich.panel import Panel
 from rich.text import Text
 from rich.console import Console
@@ -70,13 +71,47 @@ class Vpm:
 
     def run(self, cmd_name, args):
         if cmd_name not in self.commands:
-            log.critical("未知命令: %s" % cmd_name)
-            self.parser.print_help()
+            err_console.print()
+            err_console.print(
+                Panel(
+                    f"[bold red]未知命令: [white]{cmd_name}[/white][/bold red]\n\n"
+                    f"[yellow]可用的命令有:[/yellow]\n"
+                    f"  [green]add[/green]    - 添加包\n"
+                    f"  [red]del[/red]     - 删除包\n"
+                    f"  [cyan]list[/cyan]   - 列出已安装的包\n"
+                    f"  [yellow]prune[/yellow]  - 清理无效包和空目录\n"
+                    f"  [magenta]init[/magenta]   - 初始化新项目\n\n"
+                    f"[dim]使用 [white]vpm <命令> --help[/white] 查看命令的详细信息[/dim]",
+                    title="[bold red]✘ 错误[/bold red]",
+                    border_style="red",
+                    padding=(1, 2),
+                )
+            )
+            err_console.print()
             exit(1)
 
         cmd = self.commands[cmd_name]
         cmd.namespace = args
-        cmd.execute()
+        try:
+            cmd.execute()
+        except KeyboardInterrupt:
+            console.print()
+            log.warning("操作已取消")
+            exit(0)
+        except Exception as e:
+            err_console.print()
+            err_console.print(
+                Panel(
+                    f"[bold red]命令执行失败[/bold red]\n\n"
+                    f"[white]{str(e)}[/white]\n\n"
+                    f"[dim]如果问题持续，请检查网络连接或联系开发者[/dim]",
+                    title="[bold red]✘ 错误[/bold red]",
+                    border_style="red",
+                    padding=(1, 2),
+                )
+            )
+            err_console.print()
+            exit(1)
 
 
 vpm = Vpm(global_parser)
@@ -112,7 +147,25 @@ def print_banner():
 
 
 if __name__ == "__main__":
-    args = global_parser.parse_args()
+    try:
+        args = global_parser.parse_args()
+    except SystemExit as e:
+        # argparse 在遇到错误时会调用 sys.exit
+        # 我们捕获它并提供更友好的提示
+        if e.code != 0:
+            err_console.print()
+            err_console.print(
+                Panel(
+                    "[bold red]参数错误[/bold red]\n\n"
+                    "[yellow]请检查命令格式是否正确[/yellow]\n\n"
+                    "[dim]使用 [white]vpm --help[/white] 查看帮助信息[/dim]",
+                    title="[bold red]✘ 错误[/bold red]",
+                    border_style="red",
+                    padding=(1, 2),
+                )
+            )
+            err_console.print()
+        exit(e.code)
 
     # 处理版本参数
     if hasattr(args, 'version') and args.version:

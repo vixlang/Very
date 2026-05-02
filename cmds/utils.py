@@ -23,15 +23,32 @@ class Logger:
         console.print(f"  [yellow]⚠[/yellow]  {msg}")
 
     def error(self, msg):
-        err_console.print(f"  [red]✘[/red]  {msg}")
+        err_console.print()
+        err_console.print(
+            Panel(
+                f"[bold red]{msg}[/bold red]",
+                title="[bold red]✘ 错误[/bold red]",
+                border_style="red",
+                padding=(1, 2),
+            )
+        )
+        err_console.print()
 
     def debug(self, msg):
         console.print(f"  [magenta]⚙[/magenta]  {msg}")
 
     def critical(self, msg):
+        err_console.print()
         err_console.print(
-            Panel(f"[bold red]{msg}[/bold red]", title="CRITICAL", border_style="red")
+            Panel(
+                f"[bold red]{msg}[/bold red]\n\n"
+                f"[dim]这是一个严重错误，程序将退出[/dim]",
+                title="[bold red]✘ 致命错误[/bold red]",
+                border_style="red",
+                padding=(1, 2),
+            )
         )
+        err_console.print()
         exit(1)
 
     def section(self, title: str):
