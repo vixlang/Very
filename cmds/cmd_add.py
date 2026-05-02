@@ -62,7 +62,6 @@ class AddCmd(Command):
 
         if PACK_PATH.exists():
             from rich.panel import Panel
-            from cmds.utils import console
 
             console.print()
             console.print(
@@ -91,13 +90,6 @@ class AddCmd(Command):
         if packinfo.branch_name:
             log.info(f"分支: {packinfo.branch_name}")
 
-        # 读取多线程配置
-        jobs = getattr(self.namespace, "jobs", None)
-        multi_options = None
-        if jobs is not None and jobs > 0:
-            multi_options = ["--jobs", str(jobs)]
-            log.info(f"多线程下载: {jobs} 个并发任务")
-
         with Progress(
             TextColumn("[cyan]{task.description}"),
             BarColumn(bar_width=40),
@@ -114,7 +106,6 @@ class AddCmd(Command):
                     PACK_PATH,
                     branch=packinfo.branch_name,
                     progress=git_progress,
-                    multi_options=multi_options,
                 )
             except Exception as e:
                 log.error(
@@ -135,12 +126,6 @@ class AddCmd(Command):
             formatter_class=argparse.RawDescriptionHelpFormatter,
         )
         add_parser.add_argument("package", help="需要添加的包名")
-        add_parser.add_argument(
-            "-j", "--jobs",
-            type=int,
-            default=None,
-            help="并行下载的线程数 (git 2.23+ 支持)，例如 -j 4",
-        )
         return add_parser
 
 命令格式说明 = """
