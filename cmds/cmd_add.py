@@ -63,7 +63,7 @@ class AddCmd(Command):
         if PACK_PATH.exists():
             from rich.panel import Panel
             from cmds.utils import console
-            
+
             console.print()
             console.print(
                 Panel(
@@ -76,12 +76,12 @@ class AddCmd(Command):
                     padding=(1, 2),
                 )
             )
-            
+
             if not ask_confirm("是否覆盖现有包?", default=False):
                 log.warning("已取消操作")
                 console.print()
                 return
-            
+
             shutil.rmtree(PACK_PATH)
             log.success(f"已删除旧版本的包 {packinfo.full_name}")
             console.print()
@@ -90,6 +90,13 @@ class AddCmd(Command):
         log.info(f"源: [link={packinfo.git_url}]{packinfo.git_url}[/link]")
         if packinfo.branch_name:
             log.info(f"分支: {packinfo.branch_name}")
+
+        # 读取多线程配置
+        jobs = getattr(self.namespace, "jobs", None)
+        multi_options = None
+        if jobs is not None and jobs > 0:
+            multi_options = ["--jobs", str(jobs)]
+            log.info(f"多线程下载: {jobs} 个并发任务")
 
         with Progress(
             TextColumn("[cyan]{task.description}"),
@@ -107,9 +114,13 @@ class AddCmd(Command):
                     PACK_PATH,
                     branch=packinfo.branch_name,
                     progress=git_progress,
+                    multi_options=multi_options,
                 )
             except Exception as e:
-                log.error(f"下载失败\n\n[white]{str(e)}[/white]\n\n[yellow]请检查:[/yellow]\n  • 网络连接是否正常\n  • 仓库地址是否正确\n  • 是否有访问权限")
+                log.error(
+                    f"下载失败\n\n[white]{str(e)}[/white]\n\n"
+                    "[yellow]请检查:[/yellow]\n  • 网络连接是否正常\n  • 仓库地址是否正确\n  • 是否有访问权限"
+                )
                 return
 
         log.info("正在检查包信息...")
@@ -124,8 +135,13 @@ class AddCmd(Command):
             formatter_class=argparse.RawDescriptionHelpFormatter,
         )
         add_parser.add_argument("package", help="需要添加的包名")
+        add_parser.add_argument(
+            "-j", "--jobs",
+            type=int,
+            default=None,
+            help="并行下载的线程数 (git 2.23+ 支持)，例如 -j 4",
+        )
         return add_parser
-
 
 命令格式说明 = """
 |======================== vpm add 命令格式说明 ========================|
