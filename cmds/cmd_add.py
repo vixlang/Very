@@ -61,12 +61,30 @@ class AddCmd(Command):
         PACK_PATH = packinfo.pack_path
 
         if PACK_PATH.exists():
-            log.warning(f"包 [bold]{packinfo.full_name}[/bold] 已存在")
-            if not ask_confirm("是否覆盖?"):
+            from rich.panel import Panel
+            from cmds.utils import console
+            
+            console.print()
+            console.print(
+                Panel(
+                    f"[bold yellow]包已存在: [white]{packinfo.full_name}[/white][/bold yellow]\n\n"
+                    f"[dim]该包已经安装在以下位置:[/dim]\n"
+                    f"  [cyan]{PACK_PATH}[/cyan]\n\n"
+                    f"[yellow]操作选项:[/yellow]",
+                    title="[bold]⚠ 提示[/bold]",
+                    border_style="yellow",
+                    padding=(1, 2),
+                )
+            )
+            
+            if not ask_confirm("是否覆盖现有包?", default=False):
                 log.warning("已取消操作")
+                console.print()
                 return
+            
             shutil.rmtree(PACK_PATH)
-            log.success(f"已删除包 {packinfo.full_name}")
+            log.success(f"已删除旧版本的包 {packinfo.full_name}")
+            console.print()
 
         log.section(f"添加包: {packinfo.full_name}")
         log.info(f"源: [link={packinfo.git_url}]{packinfo.git_url}[/link]")

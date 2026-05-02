@@ -31,7 +31,27 @@ class DelCmd(Command):
         PACK_PATH = pack_info.pack_path
 
         if not PACK_PATH.exists():
-            log.warning(f"包 [bold]{pack_info.full_name}[/bold] 不存在")
+            from rich.panel import Panel
+            from cmds.utils import err_console
+            
+            err_console.print()
+            err_console.print(
+                Panel(
+                    f"[bold red]包不存在: [white]{pack_info.full_name}[/white][/bold red]\n\n"
+                    f"[yellow]可能的原因:[/yellow]\n"
+                    f"  • 包名拼写错误\n"
+                    f"  • 该包尚未安装\n"
+                    f"  • 包路径不正确\n\n"
+                    f"[dim]使用以下命令查看已安装的包:[/dim]\n"
+                    f"  [green]vpm list[/green]\n\n"
+                    f"[dim]或使用以下命令安装包:[/dim]\n"
+                    f"  [green]vpm add {package_name}[/green]",
+                    title="[bold red]✘ 错误[/bold red]",
+                    border_style="red",
+                    padding=(1, 2),
+                )
+            )
+            err_console.print()
             return
 
         log.section(f"删除包: {pack_info.full_name}")
