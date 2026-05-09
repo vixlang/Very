@@ -56,9 +56,29 @@ class ListCmd(Command):
                             str(total), f"[dim]{package_name}[/dim]", "[red]不可用[/red]"
                         )
 
-        footer = f"[dim]共 {total} 个包, {available} 个可用, {total - available} 个不可用[/dim]"
-        console.print(table)
-        console.print(footer)
+        if total == 0:
+            # 没有安装任何包时显示友好提示
+            from rich.panel import Panel
+            console.print()
+            console.print(
+                Panel(
+                    "[bold yellow]当前没有安装任何包[/bold yellow]\n\n"
+                    "[dim]使用以下命令添加包:[/dim]\n"
+                    "  [green]vpm add <包名>[/green]    - 添加一个包\n"
+                    "  [green]vpm add --help[/green]    - 查看添加命令的帮助\n\n"
+                    "[dim]示例:[/dim]\n"
+                    "  [cyan]vpm add fexcode.vnet[/cyan]\n"
+                    "  [cyan]vpm add @fexcode.vnet[/cyan]     (Gitee)\n",
+                    title="[bold]📦 包列表[/bold]",
+                    border_style="yellow",
+                    padding=(1, 2),
+                )
+            )
+            console.print()
+        else:
+            footer = f"[dim]共 {total} 个包, {available} 个可用, {total - available} 个不可用[/dim]"
+            console.print(table)
+            console.print(footer)
 
     def _print_tree(self, libs_path: Path):
         console.print("\n[bold]Vix 包目录结构[/bold]")
