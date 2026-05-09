@@ -1,4 +1,6 @@
 import sys
+import re
+from urllib.parse import urlparse
 from rich.console import Console
 from rich.panel import Panel
 from rich.rule import Rule
@@ -23,15 +25,32 @@ class Logger:
         console.print(f"  [yellow]⚠[/yellow]  {msg}")
 
     def error(self, msg):
-        err_console.print(f"  [red]✘[/red]  {msg}")
+        err_console.print()
+        err_console.print(
+            Panel(
+                f"[bold red]{msg}[/bold red]",
+                title="[bold red]✘ 错误[/bold red]",
+                border_style="red",
+                padding=(1, 2),
+            )
+        )
+        err_console.print()
 
     def debug(self, msg):
         console.print(f"  [magenta]⚙[/magenta]  {msg}")
 
     def critical(self, msg):
+        err_console.print()
         err_console.print(
-            Panel(f"[bold red]{msg}[/bold red]", title="CRITICAL", border_style="red")
+            Panel(
+                f"[bold red]{msg}[/bold red]\n\n"
+                f"[dim]这是一个严重错误，程序将退出[/dim]",
+                title="[bold red]✘ 致命错误[/bold red]",
+                border_style="red",
+                padding=(1, 2),
+            )
         )
+        err_console.print()
         exit(1)
 
     def section(self, title: str):
@@ -95,35 +114,102 @@ class PackageNameInfo:
 
 
 def parse_pack_name(package_name: str) -> PackageNameInfo:
+    original = package_name
+    branch = None
+    default_host = "github.com"
 
-    if "." not in package_name:
-        package_name = f"github.com:vixlang.vlib-{package_name}"
-
-    if package_name.startswith("@"):
-        package_name = "gitee.com:" + package_name[1:]
-
-    if ":" in package_name:
-        master, package_name = package_name.split(":")
-        if "." not in master:
-            master = master + ".com"
-    else:
-        master = "github.com"
+    if package_name.startswith("@") and "://" not in package_name:
+        default_host = "gitee.com"
+        package_name = package_name[1:]
 
     if "@" in package_name:
-        package_name, branch = package_name.split("@")
+        rest, _, possible_branch = package_name.rpartition("@")
+        if possible_branch and "/" not in possible_branch and ":" not in possible_branch:
+            branch = possible_branch
+            package_name = rest
+
+    if "://" in package_name:
+        parsed = urlparse(package_name)
+        master = parsed.netloc
+        path = parsed.path.lstrip("/")
+        path = re.sub(r"\.git$", "", path)
+        parts = path.split("/")
+        if len(parts) >= 2:
+            user_name, repo_name = parts[0], parts[1]
+        else:
+            log.critical(f"URL 格式无法提取用户/仓库: {package_name}")
+        return PackageNameInfo(
+            git_master=master,
+            user_name=user_name,
+            repo_name=repo_name,
+            branch_name=branch,
+        )
+
+    if "@" in package_name and ":" in package_name:
+        user_host, _, path = package_name.partition(":")
+        host = user_host.split("@")[-1]
+        master = host if "." in host else host + ".com"
+        path = path.strip()
+        path = re.sub(r"\.git$", "", path)
+        if "/" in path:
+            parts = path.split("/")
+        else:
+            parts = path.replace(".", "/").split("/")
+        if len(parts) >= 2:
+            user_name, repo_name = parts[0], parts[1]
+        else:
+            log.critical(f"SCP 格式无法解析路径: {package_name}")
+        return PackageNameInfo(
+            git_master=master,
+            user_name=user_name,
+            repo_name=repo_name,
+            branch_name=branch,
+        )
+
+    if ":" in package_name:
+        master, path = package_name.split(":", 1)
+        if "." not in master:
+            master += ".com"
+        path = re.sub(r"\.git$", "", path)
+        if "/" not in path and "." not in path:
+            path = f"vixlang.vlib-{path}"
+        if "/" not in path:
+            path = path.replace(".", "/")
+        parts = path.split("/")
+        if len(parts) >= 2:
+            user_name, repo_name = parts[0], parts[1]
+        else:
+            log.critical(f"包名格式错误: {original}")
+        return PackageNameInfo(
+            git_master=master,
+            user_name=user_name,
+            repo_name=repo_name,
+            branch_name=branch,
+        )
+
+    if "/" in package_name:
+        parts = package_name.split("/")
+        if len(parts) >= 2:
+            user_name, repo_name = parts[0], parts[1]
+            repo_name = re.sub(r"\.git$", "", repo_name)
+        else:
+            log.critical(f"包名格式错误: {original}")
+    elif "." in package_name:
+        path = package_name.replace(".", "/")
+        parts = path.split("/")
+        if len(parts) >= 2:
+            user_name, repo_name = parts[0], parts[1]
+            repo_name = re.sub(r"\.git$", "", repo_name)
+        else:
+            log.critical(f"包名格式错误: {original}")
     else:
-        branch = None
-
-    package_name = package_name.replace(".", "/")
-
-    name_splited = package_name.split("/")
-    if len(name_splited) != 2:
-        log.critical(f"包名格式错误: {package_name}")
+        user_name = "vixlang"
+        repo_name = f"vlib-{package_name}"
 
     return PackageNameInfo(
-        git_master=master,
-        user_name=name_splited[0],
-        repo_name=name_splited[1],
+        git_master=default_host,
+        user_name=user_name,
+        repo_name=repo_name,
         branch_name=branch,
     )
 
