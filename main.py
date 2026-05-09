@@ -7,7 +7,7 @@ global_parser = argparse.ArgumentParser()
 subparsers = global_parser.add_subparsers(dest="subcommand", help="[可用命令]")
 
 
-class Vpm:
+class Xpm:
     def __init__(self, parser: argparse.ArgumentParser):
         self.commands: dict[str, Command] = {}
         self.parser = parser
@@ -28,15 +28,15 @@ class Vpm:
         cmd.execute()
 
 
-vpm = Vpm(global_parser)
-vpm.register(cmds)
+xpm = Xpm(global_parser)
+xpm.register(cmds)
 
 
 def print_banner():
     console.print(
         Panel(
             "[bold cyan]Vix 包管理器[/bold cyan]\n\n"
-            "[dim]用法: vpm <命令> [参数][/dim]\n\n"
+            "[dim]用法: xpm <命令> [参数][/dim]\n\n"
             "[bold]可用命令:[/bold]\n"
             "  [green]add[/green]    添加包\n"
             "  [red]del[/red]     删除包\n"
@@ -50,11 +50,15 @@ def print_banner():
     )
 
 
-if __name__ == "__main__":
+def main():
     args = global_parser.parse_args()
 
     if not hasattr(args, "subcommand") or not args.subcommand:
         print_banner()
         exit(1)
 
-    vpm.run(args.subcommand, args)
+    xpm.run(args.subcommand, args)
+
+
+if __name__ == "__main__":
+    main()

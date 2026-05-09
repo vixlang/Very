@@ -1,0 +1,16 @@
+LICENCE
+README.md
+pyproject.toml
+cmds/__init__.py
+cmds/base.py
+cmds/cmd_add.py
+cmds/cmd_del.py
+cmds/cmd_init.py
+cmds/cmd_list.py
+cmds/cmd_prune.py
+cmds/utils.py
+xpm.egg-info/PKG-INFO
+xpm.egg-info/SOURCES.txt
+xpm.egg-info/dependency_links.txt
+xpm.egg-info/requires.txt
+xpm.egg-info/top_level.txt

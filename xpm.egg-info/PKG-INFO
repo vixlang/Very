@@ -1,3 +1,15 @@
+Metadata-Version: 2.4
+Name: xpm
+Version: 0.2.0
+Summary: Add your description here
+Requires-Python: >=3.13
+Description-Content-Type: text/markdown
+License-File: LICENCE
+Requires-Dist: gitpython>=3.1.46
+Requires-Dist: rich>=15.0.0
+Requires-Dist: tqdm>=4.67.3
+Dynamic: license-file
+
 # VPM说明
 
 这是`vix`编程语言的官方包管理器
