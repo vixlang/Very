@@ -1,6 +1,6 @@
 [project]
-name = "xpm"
+name = "very"
 version = "0.1.0"
-description = "Add your description here"
+description = "Vix 项目管理与构建工具"
 readme = "README.md"
 deps = []

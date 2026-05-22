@@ -60,7 +60,7 @@ edition = "2024"
 *.out
 *.exe
 target/
-.xpm/
+.very/
 
 # IDE
 .vscode/

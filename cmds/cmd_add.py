@@ -129,17 +129,17 @@ class AddCmd(Command):
         return add_parser
 
 命令格式说明 = """
-|======================== xpm add 命令格式说明 ========================|
+|======================== very add 命令格式说明 ========================|
 [#] 格式为: 
-[>]     xpm add git主仓库地址:用户名.git仓库项目名@分支名
+[>]     very add git主仓库地址:用户名.git仓库项目名@分支名
 [/] 
 [#] 注意：默认仓库为 github.com
 [/] 
 [#] 示例：
-[-]     xpm add fexcode.vnet                # 下载 github.com/fexcode/vnet 仓库  
-[-]     xpm add fexcode.vnet@master         # 下载 github.com/fexcode/vnet 仓库 master 分支      
-[-]     xpm add gitee.com:fexcode.vnet      # 下载 gitee.com/fexcode/vnet 仓库  
-[-]     xpm add gitee:fexcode.vnet@master   # .com 可以省略  
-[-]     xpm add @fexcode.vnet               # @符号开头默认为 gitee.com
+[-]     very add fexcode.vnet                # 下载 github.com/fexcode/vnet 仓库  
+[-]     very add fexcode.vnet@master         # 下载 github.com/fexcode/vnet 仓库 master 分支      
+[-]     very add gitee.com:fexcode.vnet      # 下载 gitee.com/fexcode/vnet 仓库  
+[-]     very add gitee:fexcode.vnet@master   # .com 可以省略  
+[-]     very add @fexcode.vnet               # @符号开头默认为 gitee.com
 |==================================================================|
 """

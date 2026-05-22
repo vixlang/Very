@@ -64,11 +64,11 @@ class ListCmd(Command):
                 Panel(
                     "[bold yellow]当前没有安装任何包[/bold yellow]\n\n"
                     "[dim]使用以下命令添加包:[/dim]\n"
-                    "  [green]vpm add <包名>[/green]    - 添加一个包\n"
-                    "  [green]vpm add --help[/green]    - 查看添加命令的帮助\n\n"
+                    "  [green]very add <包名>[/green]    - 添加一个包\n"
+                    "  [green]very add --help[/green]    - 查看添加命令的帮助\n\n"
                     "[dim]示例:[/dim]\n"
-                    "  [cyan]vpm add fexcode.vnet[/cyan]\n"
-                    "  [cyan]vpm add @fexcode.vnet[/cyan]     (Gitee)\n",
+                    "  [cyan]very add fexcode.vnet[/cyan]\n"
+                    "  [cyan]very add @fexcode.vnet[/cyan]     (Gitee)\n",
                     title="[bold]📦 包列表[/bold]",
                     border_style="yellow",
                     padding=(1, 2),
@@ -120,9 +120,9 @@ class ListCmd(Command):
 
 
 命令格式说明 = """
-|======================== xpm list 命令格式说明 ========================|
+|======================== very list 命令格式说明 ========================|
 [#] 格式为: 
-[>]     xpm list [-t|--tree]
+[>]     very list [-t|--tree]
 [/] 
 [#] 说明：列出所有已安装的包
 [/]

@@ -84,7 +84,7 @@ class VIndexTool:
                 exit(0)
             else:
                 log.critical(
-                    "已保留此包，但它不可用（缺少vindex.toml文件，xpm无法识别它）"
+                    "已保留此包，但它不可用（缺少vindex.toml文件，very无法识别它）"
                 )
 
         with open(self.path, "rb") as f:
