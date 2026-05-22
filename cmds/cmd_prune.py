@@ -111,9 +111,9 @@ class PruneCmd(Command):
 
 
 命令格式说明 = """
-|======================== xpm prune 命令格式说明 ========================|
+|======================== very prune 命令格式说明 ========================|
 [#] 格式为:
-[>]     xpm prune [--empty-only | --invalid-only]
+[>]     very prune [--empty-only | --invalid-only]
 [/]
 [#] 说明：删除没有vindex.toml的包和空目录
 [#] 选项:

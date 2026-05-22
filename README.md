@@ -1,8 +1,8 @@
-# VPM说明
+# Very 说明
 
-这是`vix`编程语言的官方包管理器
+这是`vix`编程语言的官方项目管理与构建工具
 
-xpm依托git仓库进行vix包管理，有很多简写语法
+Very依托git仓库进行vix包管理，有很多简写语法
 
 ## 官方包下载仓库
 
@@ -14,62 +14,62 @@ xpm依托git仓库进行vix包管理，有很多简写语法
 
 ## 包索引格式
 ```bash
-xpm add vnet                        # 下载 github.com/vixlang/vlib-vnet
-xpm add fexcode.vnet                # 下载 github.com/fexcode/vnet 仓库  
-xpm add fexcode.vnet@master         # 下载 github.com/fexcode/vnet 仓库 master 分支      
-xpm add gitee.com:fexcode.vnet      # 下载 gitee.com/fexcode/vnet 仓库  
-xpm add gitee:fexcode.vnet@master   # .com 可以省略  
+very add vnet                        # 下载 github.com/vixlang/vlib-vnet
+very add fexcode.vnet                # 下载 github.com/fexcode/vnet 仓库  
+very add fexcode.vnet@master         # 下载 github.com/fexcode/vnet 仓库 master 分支      
+very add gitee.com:fexcode.vnet      # 下载 gitee.com/fexcode/vnet 仓库  
+very add gitee:fexcode.vnet@master   # .com 可以省略  
 ```
 
 > o,我还给自己留了个语法糖（因为我比较喜欢gitee嘛），  
-> @fexcode.xpm  # 等价于 gitee:fexcode.xpm
+> @fexcode.very  # 等价于 gitee:fexcode.very
 
 ---
 
-## VPM命令介绍
+## Very 命令介绍
 
-### xpm add - 添加包
+### very add - 添加包
 
-`xpm add` 命令用于从git仓库下载并安装vix包。
+`very add` 命令用于从git仓库下载并安装vix包。
 
 #### 格式
 ```bash
-xpm add git主仓库地址:用户名.git仓库项目名@分支名
+very add git主仓库地址:用户名.git仓库项目名@分支名
 ```
 
 #### 示例
 ```bash
-xpm add fexcode.vnet                # 下载 github.com/fexcode/vnet 仓库
-xpm add fexcode.vnet@master         # 下载 github.com/fexcode/vnet 仓库 master 分支
-xpm add gitee.com:fexcode.vnet      # 下载 gitee.com/fexcode/vnet 仓库
-xpm add gitee:fexcode.vnet@master   # .com 可以省略
-xpm add @fexcode.vnet               # @符号开头默认为 gitee.com
+very add fexcode.vnet                # 下载 github.com/fexcode/vnet 仓库
+very add fexcode.vnet@master         # 下载 github.com/fexcode/vnet 仓库 master 分支
+very add gitee.com:fexcode.vnet      # 下载 gitee.com/fexcode/vnet 仓库
+very add gitee:fexcode.vnet@master   # .com 可以省略
+very add @fexcode.vnet               # @符号开头默认为 gitee.com
 ```
 
-### xpm del - 删除包
+### very del - 删除包
 
-`xpm del` 命令用于删除已安装的vix包。
+`very del` 命令用于删除已安装的vix包。
 
 #### 格式
 ```bash
-xpm del git主仓库地址:用户名.git仓库项目名
+very del git主仓库地址:用户名.git仓库项目名
 ```
 
 #### 示例
 ```bash
-xpm del fexcode.vnet                # 删除 github.com/fexcode/vnet 仓库
-xpm del gitee.com:fexcode.vnet      # 删除 gitee.com/fexcode/vnet 仓库
-xpm del gitee:fexcode.vnet          # .com 可以省略
-xpm del @fexcode.vnet               # @符号开头默认为 gitee.com
+very del fexcode.vnet                # 删除 github.com/fexcode/vnet 仓库
+very del gitee.com:fexcode.vnet      # 删除 gitee.com/fexcode/vnet 仓库
+very del gitee:fexcode.vnet          # .com 可以省略
+very del @fexcode.vnet               # @符号开头默认为 gitee.com
 ```
 
-### xpm list - 列出已安装的包
+### very list - 列出已安装的包
 
-`xpm list` 命令用于列出所有已安装的vix包。
+`very list` 命令用于列出所有已安装的vix包。
 
 #### 格式
 ```bash
-xpm list [-t|--tree]
+very list [-t|--tree]
 ```
 
 #### 参数
@@ -77,17 +77,17 @@ xpm list [-t|--tree]
 
 #### 示例
 ```bash
-xpm list              # 列出所有已安装的包
-xpm list -t           # 以树形结构显示包列表
+very list              # 列出所有已安装的包
+very list -t           # 以树形结构显示包列表
 ```
 
-### xpm prune - 清理无效包和空目录
+### very prune - 清理无效包和空目录
 
-`xpm prune` 命令用于删除没有vindex.toml的包和空目录。
+`very prune` 命令用于删除没有vindex.toml的包和空目录。
 
 #### 格式
 ```bash
-xpm prune [--empty-only | --invalid-only]
+very prune [--empty-only | --invalid-only]
 ```
 
 #### 选项
@@ -96,9 +96,9 @@ xpm prune [--empty-only | --invalid-only]
 
 #### 示例
 ```bash
-xpm prune                      # 删除无效包和空目录
-xpm prune --empty-only         # 只删除空目录
-xpm prune --invalid-only       # 只删除无效包
+very prune                      # 删除无效包和空目录
+very prune --empty-only         # 只删除空目录
+very prune --invalid-only       # 只删除无效包
 ```
 
 ---
@@ -109,16 +109,16 @@ xpm prune --invalid-only       # 只删除无效包
 └── libs
     ├── gitee.com
     |    ├── fexcode
-    |    │   ├── xpm
-    |    │   └── xpm2
+    |    │   ├── very
+    |    │   └── very2
     |    └── fexcode2
-    |        └── xpm3
+    |        └── very3
     └── github.com
         ├── fexcode
-        │   └── xpm
+        │   └── very
         ├── fexcode2
-        │   └── xpm2
+        │   └── very2
         └── fexcode3
-            └── xpm3
+            └── very3
 ```
 

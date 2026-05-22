@@ -1,7 +1,7 @@
 [project]
-name = "xpm"
+name = "very"
 version = "0.2.0"
-description = "Add your description here"
+description = "Vix 项目管理与构建工具"
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
@@ -15,7 +15,7 @@ url = "https://pypi.tuna.tsinghua.edu.cn/simple/"
 default = true
 
 [project.scripts]
-xpm = "main:main"
+very = "main:main"
 
 [dependency-groups]
 dev = [

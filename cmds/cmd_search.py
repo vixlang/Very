@@ -230,7 +230,7 @@ class SearchCmd(Command):
             
             headers = {
                 'Accept': 'application/vnd.github.v3+json',
-                'User-Agent': 'Vpm-Package-Manager'
+                'User-Agent': 'Very-Package-Manager'
             }
             
             req = urllib.request.Request(url, headers=headers)
@@ -244,7 +244,7 @@ class SearchCmd(Command):
                 
                 # 过滤出 vix 包（通常以 vlib- 开头）
                 for repo in data:
-                    if repo['name'].startswith('vlib-') or repo['name'] == 'vpm':
+                    if repo['name'].startswith('vlib-') or repo['name'] == 'ver':
                         packages.append({
                             'name': repo['name'],
                             'description': repo['description'] or '无描述',
@@ -302,8 +302,8 @@ class SearchCmd(Command):
         console.print()
         console.print(
             Panel(
-                "[dim]使用 [white]vpm add <包名>[/white] 安装包\n"
-                "例如: [green]vpm add vnet[/green] 或 [green]vpm add vixlang/vlib-vnet[/green][/dim]",
+                "[dim]使用 [white]very add <包名>[/white] 安装包\n"
+                "例如: [green]very add vnet[/green] 或 [green]very add vixlang/vlib-vnet[/green][/dim]",
                 title="[bold]💡 提示[/bold]",
                 border_style="cyan",
                 padding=(1, 2),
@@ -339,7 +339,7 @@ class SearchCmd(Command):
         
         if not self.CACHE_FILE.exists():
             log.info("缓存文件不存在")
-            log.info("运行 [green]vpm search[/green] 将自动创建缓存")
+            log.info("运行 [green]very search[/green] 将自动创建缓存")
             return
         
         try:

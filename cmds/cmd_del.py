@@ -5,20 +5,20 @@ import shutil
 
 
 命令格式说明 = """
-[bold]vpm del 命令格式说明[/bold]
+[bold]very del 命令格式说明[/bold]
 
 [green]格式:[/green]
-    vpm del <包名>
+    very del <包名>
 
 [green]注意:[/green]
     • 默认仓库为 github.com
     • 支持简写语法
 
 [green]示例:[/green]
-    vpm del fexcode.vnet                # 删除 github.com/fexcode/vnet
-    vpm del gitee.com:fexcode.vnet      # 删除 gitee.com/fexcode.vnet
-    vpm del gitee:fexcode.vnet          # .com 可以省略
-    vpm del @fexcode.vnet               # @ 符号开头默认为 gitee.com
+    very del fexcode.vnet                # 删除 github.com/fexcode/vnet
+    very del gitee.com:fexcode.vnet      # 删除 gitee.com/fexcode/vnet
+    very del gitee:fexcode.vnet          # .com 可以省略
+    very del @fexcode.vnet               # @ 符号开头默认为 gitee.com
 """
 
 
@@ -43,9 +43,9 @@ class DelCmd(Command):
                     f"  • 该包尚未安装\n"
                     f"  • 包路径不正确\n\n"
                     f"[dim]使用以下命令查看已安装的包:[/dim]\n"
-                    f"  [green]vpm list[/green]\n\n"
+                    f"  [green]very list[/green]\n\n"
                     f"[dim]或使用以下命令安装包:[/dim]\n"
-                    f"  [green]vpm add {package_name}[/green]",
+                    f"  [green]very add {package_name}[/green]",
                     title="[bold red]✘ 错误[/bold red]",
                     border_style="red",
                     padding=(1, 2),

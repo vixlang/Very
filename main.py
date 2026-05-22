@@ -29,16 +29,16 @@ def show_version():
     text = Text()
     text.append("╭─────────────────────────────────────╮\n", style="bold cyan")
     text.append("│  ", style="cyan")
-    text.append("VPM", style="bold bright_cyan")
+    text.append("Very", style="bold bright_cyan")
     text.append("  ", style="cyan")
     text.append("v", style="dim white")
     text.append(VERSION, style="bold bright_green")
-    text.append("                        │\n", style="cyan")
+    text.append("                       │\n", style="cyan")
     text.append("│  ", style="cyan")
     text.append("Vix", style="bold yellow")
     text.append(" ", style="white")
-    text.append("包管理器", style="bright_white")
-    text.append("                       │\n", style="cyan")
+    text.append("项目管理与构建工具", style="bright_white")
+    text.append("               │\n", style="cyan")
     text.append("╰─────────────────────────────────────╯", style="bold cyan")
     
     console.print(text)
@@ -47,9 +47,9 @@ def show_version():
     sys.exit(0)
 
 global_parser = argparse.ArgumentParser(
-    prog="vpm",
-    description="Vix 包管理器",
-    epilog="使用 'vpm <命令> --help' 查看命令的详细信息"
+    prog="very",
+    description="Vix 项目管理与构建工具",
+    epilog="使用 'very <命令> --help' 查看命令的详细信息"
 )
 global_parser.add_argument(
     "-v", "--version",
@@ -59,7 +59,7 @@ global_parser.add_argument(
 subparsers = global_parser.add_subparsers(dest="subcommand", help="[可用命令]")
 
 
-class Xpm:
+class Very:
     def __init__(self, parser: argparse.ArgumentParser):
         self.commands: dict[str, Command] = {}
         self.parser = parser
@@ -82,7 +82,7 @@ class Xpm:
                     f"  [yellow]prune[/yellow]  - 清理无效包和空目录\n"
                     f"  [magenta]init[/magenta]   - 初始化新项目\n"
                     f"  [blue]search[/blue] - 搜索可用的包\n\n"
-                    f"[dim]使用 [white]vpm <命令> --help[/white] 查看命令的详细信息[/dim]",
+                    f"[dim]使用 [white]very <命令> --help[/white] 查看命令的详细信息[/dim]",
                     title="[bold red]✘ 错误[/bold red]",
                     border_style="red",
                     padding=(1, 2),
@@ -115,15 +115,15 @@ class Xpm:
             exit(1)
 
 
-xpm = Xpm(global_parser)
-xpm.register(cmds)
+very = Very(global_parser)
+very.register(cmds)
 
 
 def print_banner():
     console.print(
         Panel(
-            "[bold cyan]Vix 包管理器[/bold cyan]\n\n"
-            "[dim]用法: xpm <命令> [参数][/dim]\n\n"
+            "[bold cyan]Vix 项目管理与构建工具[/bold cyan]\n\n"
+            "[dim]用法: very <命令> [参数][/dim]\n\n"
             "[bold]可用命令:[/bold]\n"
             "  [green]add[/green]    添加包\n"
             "  [red]del[/red]     删除包\n"
@@ -131,7 +131,7 @@ def print_banner():
             "  [yellow]prune[/yellow]  清理无效包和空目录\n"
             "  [magenta]init[/magenta]   初始化新项目\n"
             "  [blue]search[/blue] 搜索可用的包",
-            title="[bold]VPM[/bold]",
+            title="[bold]VERY[/bold]",
             border_style="cyan",
             padding=(1, 2),
         )
@@ -159,7 +159,7 @@ def main():
                 Panel(
                     "[bold red]参数错误[/bold red]\n\n"
                     "[yellow]请检查命令格式是否正确[/yellow]\n\n"
-                    "[dim]使用 [white]vpm --help[/white] 查看帮助信息[/dim]",
+                    "[dim]使用 [white]very --help[/white] 查看帮助信息[/dim]",
                     title="[bold red]✘ 错误[/bold red]",
                     border_style="red",
                     padding=(1, 2),
@@ -175,7 +175,7 @@ def main():
         print_banner()
         exit(1)
 
-    xpm.run(args.subcommand, args)
+    very.run(args.subcommand, args)
 
 
 if __name__ == "__main__":
