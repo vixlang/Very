@@ -4,6 +4,12 @@
 
 Very依托git仓库进行vix项目管理，有很多简写语法
 
+## 安装
+
+```bash
+uv tool install .
+```
+
 ## 官方包下载仓库
 
 > 地址： https://github.com/vixlang
