@@ -9,3 +9,7 @@ uv.lock
 .env
 
 .opencode
+
+.venv/
+build/
+*.egg-info/
