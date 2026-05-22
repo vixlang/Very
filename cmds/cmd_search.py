@@ -230,7 +230,7 @@ class SearchCmd(Command):
             
             headers = {
                 'Accept': 'application/vnd.github.v3+json',
-                'User-Agent': 'Very-Package-Manager'
+                'User-Agent': 'Very-Project-Manager'
             }
             
             req = urllib.request.Request(url, headers=headers)
