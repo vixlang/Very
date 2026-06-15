@@ -20,7 +20,7 @@ very init <name>                     # scaffold new vix project
 very search [keyword] [--sort stars|updated|name] [--limit N] [--no-cache] [--clear-cache] [--cache-status]
 ```
 
-## Package naming (`cmds/utils.py:116`)
+## Package naming (`cmds/utils.py:161`)
 
 `parse_pack_name()` handles many shorthand forms:
 
@@ -54,7 +54,7 @@ No test framework configured — no tests exist.
 - Runtime: `gitpython`, `rich`, `tqdm`
 - Dev: `ruff`, `black`
 
-PyPI index locked to Tsinghua mirror (`pyproject.toml` `[[tool.uv.index]]`).
+PyPI index defaults to Tsinghua mirror (commented out in `pyproject.toml`; uncomment `[[tool.uv.index]]` to enable).
 
 `uv.lock` is gitignored — run `uv lock` to regenerate.
 

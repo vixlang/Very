@@ -10,6 +10,14 @@ Very依托git仓库进行vix项目管理，有很多简写语法
 uv tool install .
 ```
 
+## 使用
+
+```bash
+very --help           # 查看所有命令
+very -v, --version    # 查看版本号
+very <命令> --help     # 查看具体命令的详细信息
+```
+
 ## 官方包下载仓库
 
 > 地址： https://github.com/vixlang
@@ -105,6 +113,56 @@ very prune [--empty-only | --invalid-only]
 very prune                      # 删除无效包和空目录
 very prune --empty-only         # 只删除空目录
 very prune --invalid-only       # 只删除无效包
+```
+
+### very init - 初始化新项目
+
+`very init` 命令用于创建一个新的 vix 项目骨架。
+
+#### 格式
+```bash
+very init <项目名>
+```
+
+#### 示例
+```bash
+very init my-project    # 创建 my-project/ 项目目录
+```
+
+#### 生成结构
+```
+my-project/
+├── vix.toml          # 项目配置
+├── src/
+│   └── main.vix      # 入口文件
+└── .gitignore
+```
+
+### very search - 搜索可用的包
+
+`very search` 命令用于从 GitHub vixlang 组织搜索可用的 vix 包。
+
+#### 格式
+```bash
+very search [关键词] [选项]
+```
+
+#### 选项
+- `--sort stars|updated|name`: 排序方式（默认按星标数）
+- `--limit N`: 限制显示的包数量
+- `--no-cache`: 不使用缓存，强制从 GitHub 获取最新数据
+- `--clear-cache`: 清理本地缓存文件
+- `--cache-status`: 查看缓存状态信息
+
+#### 示例
+```bash
+very search                    # 列出所有包（按星标数排序）
+very search vnet               # 搜索名称或描述中包含 vnet 的包
+very search --sort updated     # 按更新时间排序
+very search --limit 5          # 只显示前 5 个
+very search --no-cache         # 强制刷新缓存
+very search --cache-status     # 查看缓存状态
+very search --clear-cache      # 清理缓存
 ```
 
 ---
