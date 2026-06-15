@@ -167,10 +167,10 @@ class SearchCmd(Command):
         # 确保缓存目录存在
         self.CACHE_DIR.mkdir(parents=True, exist_ok=True)
         
-        # 尝试从缓存读取
+        # 尝试从缓存读取（空列表 [] 也是有效缓存，用 is not None 区分'无缓存'）
         cached_data = self.read_cache()
-        if cached_data:
-            log.info("使用缓存数据")
+        if cached_data is not None:
+            log.info(f"使用缓存数据（{len(cached_data)} 个包）")
             return cached_data
         
         # 缓存不存在或已过期，从 API 获取（带重试）
