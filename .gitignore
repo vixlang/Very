@@ -1,7 +1,6 @@
 .python-version
 
 __pycache__/
-uv.lock
 
 .vix
 .VSCodeCounter

@@ -18,9 +18,10 @@ dependencies = [
     "tqdm>=4.67.3",
 ]
 
-[[tool.uv.index]]
-url = "https://pypi.tuna.tsinghua.edu.cn/simple/"
-default = true
+# 中国大陆用户可取消以下注释以使用清华镜像源：
+# [[tool.uv.index]]
+# url = "https://pypi.tuna.tsinghua.edu.cn/simple/"
+# default = true
 
 [project.scripts]
 very = "main:main"

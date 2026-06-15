@@ -3,12 +3,17 @@ import argparse
 from .utils import log, console, Config
 import urllib.request
 import json
+import ssl
 from datetime import datetime
 from rich.table import Table
 from rich.panel import Panel
 from rich.live import Live
 from rich.spinner import Spinner
 import time
+
+
+# 显式 SSL 上下文，确保 HTTPS 证书验证
+_SSL_CTX = ssl.create_default_context()
 
 
 class SearchCmd(Command):
@@ -241,7 +246,7 @@ class SearchCmd(Command):
 
             req = urllib.request.Request(url, headers=headers)
 
-            with urllib.request.urlopen(req, timeout=10) as response:
+            with urllib.request.urlopen(req, timeout=10, context=_SSL_CTX) as response:
                 data = json.loads(response.read().decode("utf-8"))
 
                 # 如果没有数据，说明已经到最后一页

@@ -140,7 +140,14 @@ class PackageNameInfo:
 
     @property
     def pack_path(self, parent: Path = Config.VIX_LIBS_PATH) -> Path:
-        return parent / self.git_master / self.user_name / self.repo_name
+        path = parent / self.git_master / self.user_name / self.repo_name
+        try:
+            path.resolve().relative_to(parent.resolve())
+        except ValueError:
+            raise ValueError(
+                f"包路径穿越检测: {path} 不在 {parent} 下"
+            )
+        return path
 
     @property
     def git_url(self):
