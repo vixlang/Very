@@ -51,8 +51,6 @@ class GitProgress(remote.RemoteProgress):
         if max_count and max_count > 0:
             self.progress.update(self.task_id, total=max_count, completed=cur_count)
 
-    def __call__(self, op_code, cur_count, max_count=None, message=""):
-        self.update(op_code, cur_count, max_count, message)
 
 
 class AddCmd(Command):
