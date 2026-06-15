@@ -114,19 +114,17 @@ def parse_pack_name(package_name: str) -> PackageNameInfo:
     branch = None
     default_host = "github.com"
 
+    # ── 1. @ 前缀 → gitee.com ──────────────────────────────
     if package_name.startswith("@") and "://" not in package_name:
         default_host = "gitee.com"
         package_name = package_name[1:]
 
-    if "@" in package_name:
-        rest, _, possible_branch = package_name.rpartition("@")
-        if possible_branch and "/" not in possible_branch and ":" not in possible_branch:
-            branch = possible_branch
-            package_name = rest
-
+    # ── 2. URL 协议 → 立即解析（必须先于 @ 分支提取，否则 URL 中的
+    #        credential 如 https://token@github.com/user/repo 的
+    #       @github.com/user/repo 会被错误提取为分支名）──────
     if "://" in package_name:
         parsed = urlparse(package_name)
-        master = parsed.netloc
+        master = parsed.hostname or parsed.netloc
         path = parsed.path.lstrip("/")
         path = re.sub(r"\.git$", "", path)
         parts = path.split("/")
@@ -141,6 +139,14 @@ def parse_pack_name(package_name: str) -> PackageNameInfo:
             branch_name=branch,
         )
 
+    # ── 3. 提取分支（此时已排除 URL，@ 不会被混淆）─────────
+    if "@" in package_name:
+        rest, _, possible_branch = package_name.rpartition("@")
+        if possible_branch and "/" not in possible_branch and ":" not in possible_branch:
+            branch = possible_branch
+            package_name = rest
+
+    # ── 4. SCP 风格：user@host:path ─────────────────────────
     if "@" in package_name and ":" in package_name:
         user_host, _, path = package_name.partition(":")
         host = user_host.split("@")[-1]
