@@ -15,15 +15,18 @@ class GitProgress(remote.RemoteProgress):
         self.current_op = ""
         
     def _get_operation_name(self, op_code):
-        """获取操作名称"""
+        """获取操作名称（op_code 含 BEGIN/END 标志位，需先屏蔽）"""
+        # OP_MASK 清除 BEGIN(1)/END(2) 标志位，只保留操作阶段值
         op_map = {
             remote.RemoteProgress.COUNTING: "统计对象",
             remote.RemoteProgress.COMPRESSING: "压缩对象",
             remote.RemoteProgress.WRITING: "写入对象",
             remote.RemoteProgress.RECEIVING: "接收对象",
             remote.RemoteProgress.RESOLVING: "解析差异",
+            remote.RemoteProgress.FINDING_SOURCES: "查找源",
+            remote.RemoteProgress.CHECKING_OUT: "检出文件",
         }
-        return op_map.get(op_code, "处理中")
+        return op_map.get(op_code & remote.RemoteProgress.OP_MASK, "处理中")
 
     def update(self, op_code, cur_count, max_count=None, message=""):
         if self.task_id is None:
