@@ -122,7 +122,28 @@ class AddCmd(Command):
                 return
 
         log.info("正在检查包信息...")
-        VIndexTool(PACK_PATH).content(package_name=packinfo.full_name)
+        content = VIndexTool(PACK_PATH).content(package_name=packinfo.full_name)
+        if content is None:
+            from rich.panel import Panel
+            console.print()
+            console.print(
+                Panel(
+                    f"[bold yellow]包缺少 vindex.toml: [white]{packinfo.full_name}[/white][/bold yellow]\n\n"
+                    f"[dim]该目录已被下载但缺少必要的 vindex.toml 文件。[/dim]\n\n"
+                    f"[yellow]操作选项:[/yellow]",
+                    title="[bold]⚠ 警告[/bold]",
+                    border_style="yellow",
+                    padding=(1, 2),
+                )
+            )
+            if ask_confirm("是否删除此不完整的包?", default=True):
+                shutil.rmtree(PACK_PATH)
+                log.warning(f"已删除不完整的包 {packinfo.full_name}")
+            else:
+                log.warning(f"已保留包 {packinfo.full_name}，但它可能无法使用")
+            console.print()
+            return
+
         log.success(f"包 {packinfo.full_name} 添加成功")
 
     def set_parser(self, p: argparse._SubParsersAction) -> argparse.ArgumentParser:

@@ -7,7 +7,6 @@ from rich.rule import Rule
 from rich.prompt import Confirm
 from pathlib import Path
 import os
-import shutil
 from dataclasses import dataclass
 
 console = Console()
@@ -73,19 +72,16 @@ class VIndexTool:
     def __init__(self, dir_path: Path):
         self.path = dir_path / "vindex.toml"
 
-    def content(self, package_name=None) -> dict[str, object]:
+    def content(self, package_name=None) -> dict[str, object] | None:
+        """读取 vindex.toml 并返回解析后的字典。
+        
+        返回 None 表示文件不存在（而非解析失败——解析失败会抛异常）。
+        本方法绝不调用 exit()，调用方自行处理缺失情况。
+        """
         import tomllib
 
-        if not (self.path).exists():
-            log.error(f"包 {package_name} 不存在 vindex.toml 文件!")
-            if ask_confirm("是否删除?"):
-                shutil.rmtree(self.path.parent)
-                log.warning(f"已删除包 {package_name}")
-                exit(0)
-            else:
-                log.critical(
-                    "已保留此包，但它不可用（缺少vindex.toml文件，very无法识别它）"
-                )
+        if not self.path.exists():
+            return None
 
         with open(self.path, "rb") as f:
             return tomllib.load(f)
