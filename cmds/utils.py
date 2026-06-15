@@ -18,9 +18,6 @@ class VeryFatalError(Exception):
     """致命错误标记 —— 由主循环统一捕获后以非零退出码终止。"""
 
 
-
-
-
 class Logger:
     def info(self, msg):
         console.print(f"  [cyan]ℹ[/cyan]  {msg}")
@@ -119,7 +116,7 @@ class VIndexTool:
 
     def content(self, package_name=None) -> dict[str, object] | None:
         """读取 vindex.toml 并返回解析后的字典。
-        
+
         返回 None 表示文件不存在（而非解析失败——解析失败会抛异常）。
         本方法绝不调用 exit()，调用方自行处理缺失情况。
         """
@@ -187,7 +184,11 @@ def parse_pack_name(package_name: str) -> PackageNameInfo:
     # ── 3. 提取分支（此时已排除 URL，@ 不会被混淆）─────────
     if "@" in package_name:
         rest, _, possible_branch = package_name.rpartition("@")
-        if possible_branch and "/" not in possible_branch and ":" not in possible_branch:
+        if (
+            possible_branch
+            and "/" not in possible_branch
+            and ":" not in possible_branch
+        ):
             branch = possible_branch
             package_name = rest
 

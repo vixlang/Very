@@ -42,9 +42,7 @@ class PruneCmd(Command):
 
         self._print_summary(removed_packages, removed_dirs, empty_only, invalid_only)
 
-    def _print_summary(
-        self, packages, dirs, empty_only: bool, invalid_only: bool
-    ):
+    def _print_summary(self, packages, dirs, empty_only: bool, invalid_only: bool):
         table = Table(show_header=False, box=None, padding=(0, 2))
         table.add_column("label", style="cyan")
         table.add_column("value", style="bold white")

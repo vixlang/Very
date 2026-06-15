@@ -4,7 +4,6 @@ from .utils import log, err_console, parse_pack_name, ask_confirm
 import shutil
 from rich.panel import Panel
 
-
 命令格式说明 = """
 [bold]very del 命令格式说明[/bold]
 
@@ -32,7 +31,7 @@ class DelCmd(Command):
         PACK_PATH = pack_info.pack_path
 
         if not PACK_PATH.exists():
-            
+
             err_console.print()
             err_console.print(
                 Panel(
@@ -54,7 +53,7 @@ class DelCmd(Command):
             return
 
         log.section(f"删除包: {pack_info.full_name}")
-        
+
         if not ask_confirm("确认删除?", default=False):
             log.warning("已取消操作")
             return

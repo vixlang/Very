@@ -44,7 +44,9 @@ class ListCmd(Command):
                 available += 1
                 table.add_row(str(total), package_name, "[green]可用[/green]")
             else:
-                table.add_row(str(total), f"[dim]{package_name}[/dim]", "[red]不可用[/red]")
+                table.add_row(
+                    str(total), f"[dim]{package_name}[/dim]", "[red]不可用[/red]"
+                )
 
         if total == 0:
             console.print()

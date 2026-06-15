@@ -11,7 +11,7 @@ import sys
 try:
     import tomllib
     from pathlib import Path
-    
+
     pyproject_path = Path(__file__).parent / "pyproject.toml"
     with open(pyproject_path, "rb") as f:
         pyproject_data = tomllib.load(f)
@@ -19,12 +19,13 @@ try:
 except Exception:
     VERSION = "0.2.0"  #  fallback 版本
 
+
 def show_version():
     """显示彩色版本信息"""
     console = Console()
-    
+
     console.print()
-    
+
     # 创建彩色的版本信息
     text = Text()
     text.append("╭─────────────────────────────────────╮\n", style="bold cyan")
@@ -40,20 +41,17 @@ def show_version():
     text.append("项目管理与构建工具", style="bright_white")
     text.append("               │\n", style="cyan")
     text.append("╰─────────────────────────────────────╯", style="bold cyan")
-    
+
     console.print(text)
     console.print()
+
 
 global_parser = argparse.ArgumentParser(
     prog="very",
     description="Vix 项目管理与构建工具",
-    epilog="使用 'very <命令> --help' 查看命令的详细信息"
+    epilog="使用 'very <命令> --help' 查看命令的详细信息",
 )
-global_parser.add_argument(
-    "-v", "--version",
-    action="store_true",
-    help="显示版本号"
-)
+global_parser.add_argument("-v", "--version", action="store_true", help="显示版本号")
 subparsers = global_parser.add_subparsers(dest="subcommand", help="[可用命令]")
 
 
@@ -155,7 +153,7 @@ def main():
             err_console.print()
         exit(e.code)
 
-    if hasattr(args, 'version') and args.version:
+    if hasattr(args, "version") and args.version:
         show_version()
         sys.exit(0)
 

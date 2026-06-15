@@ -3,7 +3,14 @@ import argparse
 from git import Repo, remote
 from .utils import log, VIndexTool, parse_pack_name, ask_confirm, console
 import shutil
-from rich.progress import Progress, BarColumn, TextColumn, TimeElapsedColumn, TimeRemainingColumn, TransferSpeedColumn
+from rich.progress import (
+    Progress,
+    BarColumn,
+    TextColumn,
+    TimeElapsedColumn,
+    TimeRemainingColumn,
+    TransferSpeedColumn,
+)
 from rich.panel import Panel
 
 
@@ -14,7 +21,7 @@ class GitProgress(remote.RemoteProgress):
         self.package_name = package_name
         self.task_id = None
         self.current_op = ""
-        
+
     def _get_operation_name(self, op_code):
         """获取操作名称（op_code 含 BEGIN/END 标志位，需先屏蔽）"""
         # OP_MASK 清除 BEGIN(1)/END(2) 标志位，只保留操作阶段值
@@ -35,23 +42,22 @@ class GitProgress(remote.RemoteProgress):
             op_name = self._get_operation_name(op_code)
             self.task_id = self.progress.add_task(
                 f"[cyan]克隆 {self.package_name}[/cyan] - {op_name}",
-                total=max_count if max_count and max_count > 0 else None
+                total=max_count if max_count and max_count > 0 else None,
             )
             self.current_op = op_name
-        
+
         # 检查操作是否变化
         new_op = self._get_operation_name(op_code)
         if new_op != self.current_op:
             self.current_op = new_op
             self.progress.update(
                 self.task_id,
-                description=f"[cyan]克隆 {self.package_name}[/cyan] - {new_op}"
+                description=f"[cyan]克隆 {self.package_name}[/cyan] - {new_op}",
             )
-        
+
         # 更新进度
         if max_count and max_count > 0:
             self.progress.update(self.task_id, total=max_count, completed=cur_count)
-
 
 
 class AddCmd(Command):
@@ -152,6 +158,7 @@ class AddCmd(Command):
         )
         add_parser.add_argument("package", help="需要添加的包名")
         return add_parser
+
 
 命令格式说明 = """
 |======================== very add 命令格式说明 ========================|
