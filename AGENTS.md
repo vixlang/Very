@@ -6,7 +6,7 @@ Vix language project management & build tool. CLI name: `very`.
 
 - **Python** >=3.13, **uv**-managed, setuptools build
 - Entrypoint: `main.py` → `main:main` (installed as `very` via `pyproject.toml` `[project.scripts]`)
-- Commands: `add`, `del`, `list`, `prune`, `init`, `search` — registered in `cmds/__init__.py`, all extend `Command` from `cmds/base.py`
+- Commands: `add`, `del`, `list`, `prune`, `init`, `search`, `install`, `update` — registered in `cmds/__init__.py`, all extend `Command` from `cmds/base.py`
 
 ## Commands
 
@@ -18,6 +18,8 @@ very list [-t|--tree]                # list installed packages
 very prune [--empty-only | --invalid-only]
 very init <name>                     # scaffold new vix project
 very search [keyword] [--sort stars|updated|name] [--limit N] [--no-cache] [--clear-cache] [--cache-status]
+very install                         # install deps from vix.toml
+very update [<package>]              # git pull package(s)
 ```
 
 ## Package naming (`cmds/utils.py:161`)

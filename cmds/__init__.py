@@ -1,5 +1,5 @@
 from .base import Command as Command
-from . import cmd_add, cmd_del, cmd_list, cmd_prune, cmd_init, cmd_search
+from . import cmd_add, cmd_del, cmd_list, cmd_prune, cmd_init, cmd_search, cmd_install, cmd_update
 from .utils import log as log, console as console
 
 CMD_REGISTRY: dict[str, dict] = {
@@ -13,6 +13,16 @@ CMD_REGISTRY: dict[str, dict] = {
     },
     "init": {"cls": cmd_init.InitCmd, "color": "magenta", "desc": "初始化新项目"},
     "search": {"cls": cmd_search.SearchCmd, "color": "blue", "desc": "搜索可用的包"},
+    "install": {
+        "cls": cmd_install.InstallCmd,
+        "color": "green",
+        "desc": "安装 vix.toml 中声明的所有依赖",
+    },
+    "update": {
+        "cls": cmd_update.UpdateCmd,
+        "color": "cyan",
+        "desc": "更新已安装的包",
+    },
 }
 
 cmds: list[type[Command]] = [entry["cls"] for entry in CMD_REGISTRY.values()]
