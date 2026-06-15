@@ -1,4 +1,4 @@
-from cmds import cmds, Command, log, console
+from cmds import cmds, Command, CMD_REGISTRY, log, console
 from cmds.utils import err_console, VeryFatalError
 from rich.panel import Panel
 from rich.text import Text
@@ -70,16 +70,14 @@ class Very:
     def run(self, cmd_name, args):
         if cmd_name not in self.commands:
             err_console.print()
+            help_lines = "\n".join(
+                f"  [{info['color']}]{name}[/{info['color']}]    - {info['desc']}"
+                for name, info in CMD_REGISTRY.items()
+            )
             err_console.print(
                 Panel(
                     f"[bold red]未知命令: [white]{cmd_name}[/white][/bold red]\n\n"
-                    f"[yellow]可用的命令有:[/yellow]\n"
-                    f"  [green]add[/green]    - 添加包\n"
-                    f"  [red]del[/red]     - 删除包\n"
-                    f"  [cyan]list[/cyan]   - 列出已安装的包\n"
-                    f"  [yellow]prune[/yellow]  - 清理无效包和空目录\n"
-                    f"  [magenta]init[/magenta]   - 初始化新项目\n"
-                    f"  [blue]search[/blue] - 搜索可用的包\n\n"
+                    f"[yellow]可用的命令有:[/yellow]\n{help_lines}\n\n"
                     f"[dim]使用 [white]very <命令> --help[/white] 查看命令的详细信息[/dim]",
                     title="[bold red]✘ 错误[/bold red]",
                     border_style="red",
@@ -120,33 +118,22 @@ very.register(cmds)
 
 
 def print_banner():
+    help_lines = "\n".join(
+        f"  [{info['color']}]{name}[/{info['color']}]    {info['desc']}"
+        for name, info in CMD_REGISTRY.items()
+    )
     console.print(
         Panel(
             "[bold cyan]Vix 项目管理与构建工具[/bold cyan]\n\n"
             "[dim]用法: very <命令> [参数][/dim]\n\n"
             "[bold]可用命令:[/bold]\n"
-            "  [green]add[/green]    添加包\n"
-            "  [red]del[/red]     删除包\n"
-            "  [cyan]list[/cyan]   列出已安装的包\n"
-            "  [yellow]prune[/yellow]  清理无效包和空目录\n"
-            "  [magenta]init[/magenta]   初始化新项目\n"
-            "  [blue]search[/blue] 搜索可用的包",
+            f"{help_lines}",
             title="[bold]VERY[/bold]",
             border_style="cyan",
             padding=(1, 2),
         )
     )
     console.print()
-    console.print(
-        Panel(
-            "  [bold red]del[/bold red]      删除已安装的包\n\n"
-            "  [bold cyan]list[/bold cyan]    列出所有已安装的包\n\n"
-            "  [bold yellow]prune[/bold yellow]  清理无效包和空目录\n\n"
-            "  [bold blue]search[/bold blue]  搜索可用的包",
-            border_style="cyan",
-            padding=(1, 2),
-        )
-    )
 
 
 def main():

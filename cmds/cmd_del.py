@@ -1,7 +1,8 @@
 from .base import Command
 import argparse
-from .utils import log, parse_pack_name, ask_confirm
+from .utils import log, err_console, parse_pack_name, ask_confirm
 import shutil
+from rich.panel import Panel
 
 
 命令格式说明 = """
@@ -31,8 +32,6 @@ class DelCmd(Command):
         PACK_PATH = pack_info.pack_path
 
         if not PACK_PATH.exists():
-            from rich.panel import Panel
-            from cmds.utils import err_console
             
             err_console.print()
             err_console.print(

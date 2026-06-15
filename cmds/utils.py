@@ -71,9 +71,10 @@ def ask_confirm(prompt: str, default: bool = False) -> bool:
     return Confirm.ask(prompt, default=default)
 
 
+@dataclass(frozen=True)
 class Config:
-    VIX_HOME = Path(os.getenv("VIX_HOME", "./.vix"))
-    VIX_LIBS_PATH = VIX_HOME / "libs"
+    VIX_HOME: Path = Path(os.getenv("VIX_HOME", "./.vix"))
+    VIX_LIBS_PATH: Path = Path(os.getenv("VIX_HOME", "./.vix")) / "libs"
 
 
 def iter_package_dirs(libs_path: Path) -> Iterator[tuple[Path, Path, Path, str]]:

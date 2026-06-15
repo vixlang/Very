@@ -4,6 +4,7 @@ from git import Repo, remote
 from .utils import log, VIndexTool, parse_pack_name, ask_confirm, console
 import shutil
 from rich.progress import Progress, BarColumn, TextColumn, TimeElapsedColumn, TimeRemainingColumn, TransferSpeedColumn
+from rich.panel import Panel
 
 
 class GitProgress(remote.RemoteProgress):
@@ -62,7 +63,6 @@ class AddCmd(Command):
         PACK_PATH = packinfo.pack_path
 
         if PACK_PATH.exists():
-            from rich.panel import Panel
 
             console.print()
             console.print(
@@ -122,7 +122,6 @@ class AddCmd(Command):
         log.info("正在检查包信息...")
         content = VIndexTool(PACK_PATH).content(package_name=packinfo.full_name)
         if content is None:
-            from rich.panel import Panel
             console.print()
             console.print(
                 Panel(

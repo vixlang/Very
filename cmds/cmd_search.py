@@ -3,6 +3,7 @@ import argparse
 from .utils import log, console, Config
 import urllib.request
 import json
+from datetime import datetime
 from rich.table import Table
 from rich.panel import Panel
 from rich.live import Live
@@ -360,7 +361,6 @@ class SearchCmd(Command):
                 status = "[red]已过期[/red]"
             
             # 格式化时间
-            from datetime import datetime
             cache_time = datetime.fromtimestamp(timestamp).strftime('%Y-%m-%d %H:%M:%S')
             
             console.print()
