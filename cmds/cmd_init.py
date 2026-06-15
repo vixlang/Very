@@ -39,7 +39,7 @@ description = ""
 authors = []
 edition = "2024"
 
-[dependencies]
+deps = []
 """
 
             (project_path / "vix.toml").write_text(vix_toml_content)

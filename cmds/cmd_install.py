@@ -34,7 +34,7 @@ class InstallCmd(Command):
         with open(vix_toml_path, "rb") as f:
             data = tomllib.load(f)
 
-        deps = data.get("dependencies", {})
+        deps = data.get("deps", [])
         if not deps:
             log.info("vix.toml 中没有声明依赖")
             return
@@ -44,12 +44,12 @@ class InstallCmd(Command):
         skipped = []
         failed = []
 
-        for name, spec in deps.items():
+        for spec in deps:
             packinfo = parse_pack_name(spec)
             PACK_PATH = packinfo.pack_path
 
             if PACK_PATH.exists():
-                skipped.append(name)
+                skipped.append(spec)
                 continue
 
             log.info(f"正在安装 [cyan]{spec}[/cyan] ...")
@@ -73,7 +73,7 @@ class InstallCmd(Command):
                 except Exception as e:
                     if PACK_PATH.exists():
                         shutil.rmtree(PACK_PATH, ignore_errors=True)
-                    failed.append((name, str(e)))
+                    failed.append((spec, str(e)))
                     continue
 
             content = VIndexTool(PACK_PATH).content()
@@ -90,11 +90,11 @@ class InstallCmd(Command):
                 )
                 if ask_confirm("是否删除此不完整的包?", default=True):
                     shutil.rmtree(PACK_PATH)
-                    failed.append((name, "缺少 vindex.toml"))
+                    failed.append((spec, "缺少 vindex.toml"))
                 else:
-                    success.append(name)
+                    success.append(spec)
             else:
-                success.append(name)
+                success.append(spec)
 
         console.print()
         log.section("安装结果")
@@ -103,5 +103,5 @@ class InstallCmd(Command):
         if skipped:
             log.info(f"跳过(已存在): {', '.join(skipped)}")
         if failed:
-            for name, reason in failed:
-                log.error(f"{name}: {reason}")
+            for spec, reason in failed:
+                log.error(f"{spec}: {reason}")
