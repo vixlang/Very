@@ -68,7 +68,7 @@ def ask_confirm(prompt: str, default: bool = False) -> bool:
     return Confirm.ask(prompt, default=default)
 
 
-@dataclass(frozen=True)
+@dataclass
 class Config:
     VIX_HOME: Path = Path(os.getenv("VIX_HOME", "./.vix"))
     VIX_LIBS_PATH: Path = Path(os.getenv("VIX_HOME", "./.vix")) / "libs"

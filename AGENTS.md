@@ -1,4 +1,4 @@
-# AGENTS.md — very (xpm)
+# AGENTS.md — very
 
 ## Project
 
@@ -40,7 +40,7 @@ ruff check .       # linter (dev dep)
 black .            # formatter (dev dep)
 ```
 
-No test framework configured — no tests exist.
+Test framework: `pytest` (dev dep). Run: `uv run pytest tests/` (100 tests, all passing).
 
 ## Config & paths
 
