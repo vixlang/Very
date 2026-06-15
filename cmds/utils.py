@@ -68,6 +68,44 @@ class Config:
     VIX_LIBS_PATH = VIX_HOME / "libs"
 
 
+from collections.abc import Iterator
+
+def iter_package_dirs(libs_path: Path) -> Iterator[tuple[Path, Path, Path, str]]:
+    """遍历所有已安装包的目录结构。
+
+    Yields: (master_dir, user_dir, repo_dir, "host:user.repo")
+    """
+    for md in libs_path.iterdir():
+        if not md.is_dir():
+            continue
+        for ud in md.iterdir():
+            if not ud.is_dir():
+                continue
+            for rd in ud.iterdir():
+                if not rd.is_dir():
+                    continue
+                yield md, ud, rd, f"{md.name}:{ud.name}.{rd.name}"
+
+
+def iter_empty_dirs(libs_path: Path) -> Iterator[Path]:
+    """从底部向上遍历空目录（反向排序确保子目录先被清理）。"""
+    for md in sorted(libs_path.iterdir(), reverse=True):
+        if not md.is_dir():
+            continue
+        for ud in sorted(md.iterdir(), reverse=True):
+            if not ud.is_dir():
+                continue
+            for rd in sorted(ud.iterdir(), reverse=True):
+                if not rd.is_dir():
+                    continue
+                if not any(rd.iterdir()):
+                    yield rd
+            if not any(ud.iterdir()):
+                yield ud
+        if not any(md.iterdir()):
+            yield md
+
+
 class VIndexTool:
     def __init__(self, dir_path: Path):
         self.path = dir_path / "vindex.toml"

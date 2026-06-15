@@ -1,6 +1,6 @@
 from .base import Command
 import argparse
-from .utils import Config, log, console
+from .utils import Config, log, console, iter_package_dirs, iter_empty_dirs
 from rich.panel import Panel
 from rich.table import Table
 import shutil
@@ -26,54 +26,19 @@ class PruneCmd(Command):
         removed_dirs = []
 
         if not empty_only:
-            for master_dir in libs_path.iterdir():
-                if not master_dir.is_dir():
-                    continue
-                for user_dir in master_dir.iterdir():
-                    if not user_dir.is_dir():
-                        continue
-                    for repo_dir in user_dir.iterdir():
-                        if not repo_dir.is_dir():
-                            continue
-                        vindex_file = repo_dir / "vindex.toml"
-                        if not vindex_file.exists():
-                            package_name = (
-                                f"{master_dir.name}:{user_dir.name}.{repo_dir.name}"
-                            )
-                            removed_packages.append(package_name)
-                            log.warning(f"无效包: [bold]{package_name}[/bold]")
-                            shutil.rmtree(repo_dir)
+            for _, _, repo_dir, package_name in iter_package_dirs(libs_path):
+                vindex_file = repo_dir / "vindex.toml"
+                if not vindex_file.exists():
+                    removed_packages.append(package_name)
+                    log.warning(f"无效包: [bold]{package_name}[/bold]")
+                    shutil.rmtree(repo_dir)
 
         if not invalid_only:
-            master_dirs = sorted(
-                [d for d in libs_path.iterdir() if d.is_dir()], reverse=True
-            )
-            for master_dir in master_dirs:
-                user_dirs = sorted(
-                    [d for d in master_dir.iterdir() if d.is_dir()], reverse=True
-                )
-                for user_dir in user_dirs:
-                    repo_dirs = sorted(
-                        [d for d in user_dir.iterdir() if d.is_dir()], reverse=True
-                    )
-                    for repo_dir in repo_dirs:
-                        if not any(repo_dir.iterdir()):
-                            repo_dir.rmdir()
-                            rel = repo_dir.relative_to(libs_path)
-                            removed_dirs.append(str(rel))
-                            log.info(f"清理空目录: [dim]{rel}[/dim]")
-
-                    if not any(user_dir.iterdir()):
-                        user_dir.rmdir()
-                        rel = user_dir.relative_to(libs_path)
-                        removed_dirs.append(str(rel))
-                        log.info(f"清理空目录: [dim]{rel}[/dim]")
-
-                if not any(master_dir.iterdir()):
-                    master_dir.rmdir()
-                    rel = master_dir.relative_to(libs_path)
-                    removed_dirs.append(str(rel))
-                    log.info(f"清理空目录: [dim]{rel}[/dim]")
+            for empty_dir in iter_empty_dirs(libs_path):
+                rel = empty_dir.relative_to(libs_path)
+                removed_dirs.append(str(rel))
+                empty_dir.rmdir()
+                log.info(f"清理空目录: [dim]{rel}[/dim]")
 
         self._print_summary(removed_packages, removed_dirs, empty_only, invalid_only)
 

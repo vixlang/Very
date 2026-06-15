@@ -1,9 +1,10 @@
 from .base import Command
 import argparse
 from pathlib import Path
-from .utils import Config, log, console
+from .utils import Config, log, console, iter_package_dirs
 from rich.table import Table
 from rich.tree import Tree
+from rich.panel import Panel
 
 
 class ListCmd(Command):
@@ -36,31 +37,16 @@ class ListCmd(Command):
         total = 0
         available = 0
 
-        for master_dir in libs_path.iterdir():
-            if not master_dir.is_dir():
-                continue
-            for user_dir in master_dir.iterdir():
-                if not user_dir.is_dir():
-                    continue
-                for repo_dir in user_dir.iterdir():
-                    if not repo_dir.is_dir():
-                        continue
-                    vindex_file = repo_dir / "vindex.toml"
-                    package_name = f"{master_dir.name}:{user_dir.name}.{repo_dir.name}"
-                    total += 1
-                    if vindex_file.exists():
-                        available += 1
-                        table.add_row(
-                            str(total), package_name, "[green]可用[/green]"
-                        )
-                    else:
-                        table.add_row(
-                            str(total), f"[dim]{package_name}[/dim]", "[red]不可用[/red]"
-                        )
+        for _, _, repo_dir, package_name in iter_package_dirs(libs_path):
+            vindex_file = repo_dir / "vindex.toml"
+            total += 1
+            if vindex_file.exists():
+                available += 1
+                table.add_row(str(total), package_name, "[green]可用[/green]")
+            else:
+                table.add_row(str(total), f"[dim]{package_name}[/dim]", "[red]不可用[/red]")
 
         if total == 0:
-            # 没有安装任何包时显示友好提示
-            from rich.panel import Panel
             console.print()
             console.print(
                 Panel(
