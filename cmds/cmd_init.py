@@ -1,6 +1,5 @@
 from .base import Command
 import argparse
-import os
 from pathlib import Path
 from .utils import log, console
 from rich.markdown import Markdown

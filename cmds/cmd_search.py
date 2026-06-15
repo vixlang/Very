@@ -7,7 +7,6 @@ from rich.table import Table
 from rich.panel import Panel
 from rich.live import Live
 from rich.spinner import Spinner
-from pathlib import Path
 import time
 
 
@@ -327,7 +326,7 @@ class SearchCmd(Command):
             # 删除缓存文件
             self.CACHE_FILE.unlink()
             
-            log.success(f"缓存已清理")
+            log.success("缓存已清理")
             log.info(f"释放空间: {cache_size_kb:.2f} KB")
             
         except Exception as e:
