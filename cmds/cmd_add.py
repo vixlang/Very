@@ -108,6 +108,10 @@ class AddCmd(Command):
                     progress=git_progress,
                 )
             except Exception as e:
+                # 清理已创建但未完整克隆的目录，防止脏数据残留
+                if PACK_PATH.exists():
+                    shutil.rmtree(PACK_PATH, ignore_errors=True)
+                    log.info(f"已清理不完整的克隆目录: {PACK_PATH}")
                 log.error(
                     f"下载失败\n\n[white]{str(e)}[/white]\n\n"
                     "[yellow]请检查:[/yellow]\n  • 网络连接是否正常\n  • 仓库地址是否正确\n  • 是否有访问权限"
