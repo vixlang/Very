@@ -7,10 +7,18 @@ from rich.rule import Rule
 from rich.prompt import Confirm
 from pathlib import Path
 import os
+from collections.abc import Iterator
 from dataclasses import dataclass
 
 console = Console()
 err_console = Console(file=sys.stderr)
+
+
+class VeryFatalError(Exception):
+    """致命错误标记 —— 由主循环统一捕获后以非零退出码终止。"""
+
+
+
 
 
 class Logger:
@@ -50,7 +58,7 @@ class Logger:
             )
         )
         err_console.print()
-        exit(1)
+        raise VeryFatalError(msg)
 
     def section(self, title: str):
         console.print(Rule(f"[bold]{title}[/bold]", style="dim"))
@@ -67,8 +75,6 @@ class Config:
     VIX_HOME = Path(os.getenv("VIX_HOME", "./.vix"))
     VIX_LIBS_PATH = VIX_HOME / "libs"
 
-
-from collections.abc import Iterator
 
 def iter_package_dirs(libs_path: Path) -> Iterator[tuple[Path, Path, Path, str]]:
     """遍历所有已安装包的目录结构。
@@ -169,7 +175,7 @@ def parse_pack_name(package_name: str) -> PackageNameInfo:
         if len(parts) >= 2:
             user_name, repo_name = parts[0], parts[1]
         else:
-            log.critical(f"URL 格式无法提取用户/仓库: {package_name}")
+            raise ValueError(f"URL 格式无法提取用户/仓库: {package_name}")
         return PackageNameInfo(
             git_master=master,
             user_name=user_name,
@@ -198,7 +204,7 @@ def parse_pack_name(package_name: str) -> PackageNameInfo:
         if len(parts) >= 2:
             user_name, repo_name = parts[0], parts[1]
         else:
-            log.critical(f"SCP 格式无法解析路径: {package_name}")
+            raise ValueError(f"SCP 格式无法解析路径: {package_name}")
         return PackageNameInfo(
             git_master=master,
             user_name=user_name,
@@ -219,7 +225,7 @@ def parse_pack_name(package_name: str) -> PackageNameInfo:
         if len(parts) >= 2:
             user_name, repo_name = parts[0], parts[1]
         else:
-            log.critical(f"包名格式错误: {original}")
+            raise ValueError(f"包名格式错误: {original}")
         return PackageNameInfo(
             git_master=master,
             user_name=user_name,
@@ -233,7 +239,7 @@ def parse_pack_name(package_name: str) -> PackageNameInfo:
             user_name, repo_name = parts[0], parts[1]
             repo_name = re.sub(r"\.git$", "", repo_name)
         else:
-            log.critical(f"包名格式错误: {original}")
+            raise ValueError(f"包名格式错误: {original}")
     elif "." in package_name:
         path = package_name.replace(".", "/")
         parts = path.split("/")
@@ -241,7 +247,7 @@ def parse_pack_name(package_name: str) -> PackageNameInfo:
             user_name, repo_name = parts[0], parts[1]
             repo_name = re.sub(r"\.git$", "", repo_name)
         else:
-            log.critical(f"包名格式错误: {original}")
+            raise ValueError(f"包名格式错误: {original}")
     else:
         user_name = "vixlang"
         repo_name = f"vlib-{package_name}"

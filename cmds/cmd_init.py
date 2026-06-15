@@ -21,13 +21,13 @@ class InitCmd(Command):
         
         if not project_name:
             log.error("请提供项目名称")
-            exit(1)
+            return
         
         project_path = Path(project_name)
         
         if project_path.exists():
             log.error(f"目录 '{project_name}' 已存在")
-            exit(1)
+            return
         
         try:
             project_path.mkdir(parents=True)
@@ -89,4 +89,4 @@ Thumbs.db
             
         except Exception as e:
             log.error(f"创建项目失败: {e}")
-            exit(1)
+            return

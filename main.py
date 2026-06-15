@@ -1,5 +1,5 @@
 from cmds import cmds, Command, log, console
-from cmds.utils import err_console
+from cmds.utils import err_console, VeryFatalError
 from rich.panel import Panel
 from rich.text import Text
 from rich.console import Console
@@ -43,8 +43,6 @@ def show_version():
     
     console.print(text)
     console.print()
-    
-    sys.exit(0)
 
 global_parser = argparse.ArgumentParser(
     prog="very",
@@ -95,6 +93,8 @@ class Very:
         cmd.namespace = args
         try:
             cmd.execute()
+        except VeryFatalError:
+            exit(1)
         except KeyboardInterrupt:
             console.print()
             log.warning("操作已取消")
@@ -170,6 +170,7 @@ def main():
 
     if hasattr(args, 'version') and args.version:
         show_version()
+        sys.exit(0)
 
     if not hasattr(args, "subcommand") or not args.subcommand:
         print_banner()
