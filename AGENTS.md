@@ -57,3 +57,8 @@ No test framework configured — no tests exist.
 PyPI index locked to Tsinghua mirror (`pyproject.toml` `[[tool.uv.index]]`).
 
 `uv.lock` is gitignored — run `uv lock` to regenerate.
+
+## Workflow
+
+- 任何修改都要及时 git 提交
+- 对于探索类型任务, 拆分模块发动多个 subagent 并发探索, 不要只用单个 agent
