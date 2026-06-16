@@ -42,7 +42,7 @@ deps = []
 
             (project_path / "vindex.toml").write_text(vindex_toml_content)
 
-            main_vix_content = """fn main() -> i32 {
+            main_vix_content = """fn main(): i32 {
     print("Hello, Vix!")
     return 0
 }
