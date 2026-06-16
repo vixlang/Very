@@ -38,11 +38,12 @@ class TestInitCmd:
         assert "成功创建项目" in out
         proj = tmp_path / "myproject"
         assert proj.is_dir()
-        assert (proj / "vix.toml").is_file()
-        assert 'name = "myproject"' in (proj / "vix.toml").read_text("utf-8")
-        assert (proj / "src" / "main.vix").is_file()
-        assert "Hello, Vix!" in (proj / "src" / "main.vix").read_text("utf-8")
+        assert (proj / "vindex.toml").is_file()
+        assert 'name = "myproject"' in (proj / "vindex.toml").read_text("utf-8")
+        assert (proj / "main.vix").is_file()
+        assert "Hello, Vix!" in (proj / "main.vix").read_text("utf-8")
         assert (proj / ".gitignore").is_file()
+        assert (proj / "README.md").is_file()
 
     def test_filesystem_error(self, tmp_path, monkeypatch):
         monkeypatch.chdir(tmp_path)

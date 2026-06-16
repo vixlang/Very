@@ -29,10 +29,8 @@ class InitCmd(Command):
 
         try:
             project_path.mkdir(parents=True)
-            src_dir = project_path / "src"
-            src_dir.mkdir()
 
-            vix_toml_content = f"""[project]
+            vindex_toml_content = f"""[project]
 name = "{project_name}"
 version = "0.1.0"
 description = ""
@@ -42,7 +40,7 @@ edition = "2024"
 deps = []
 """
 
-            (project_path / "vix.toml").write_text(vix_toml_content)
+            (project_path / "vindex.toml").write_text(vindex_toml_content)
 
             main_vix_content = """fn main() -> i32 {
     print("Hello, Vix!")
@@ -50,7 +48,7 @@ deps = []
 }
 """
 
-            (src_dir / "main.vix").write_text(main_vix_content)
+            (project_path / "main.vix").write_text(main_vix_content)
 
             gitignore_content = """# Vix
 *.o
@@ -73,15 +71,28 @@ Thumbs.db
 
             (project_path / ".gitignore").write_text(gitignore_content)
 
+            readme_content = f"""# {project_name}
+
+Vix 项目
+
+## 构建
+
+```bash
+very build
+```
+"""
+
+            (project_path / "README.md").write_text(readme_content)
+
             console.print(f"[green]成功创建项目 '{project_name}'[/green]")
             console.print("\n[bold]项目结构:[/bold]")
             console.print(Markdown(f"""
 ```
 {project_name}/
-├── vix.toml          # 项目配置
-├── src/
-│   └── main.vix      # 入口文件
-└── .gitignore
+├── vindex.toml       # 项目配置
+├── main.vix          # 入口文件
+├── .gitignore
+└── README.md
 ```
 """))
 
