@@ -58,7 +58,7 @@ class Very:
             c = cmd(subparsers)
             self.commands[cmd.NAME] = c
 
-    def run(self, cmd_name, args):
+    def run(self, cmd_name, args, extra=None):
         if cmd_name not in self.commands:
             err_console.print()
             help_lines = "\n".join(
@@ -80,6 +80,7 @@ class Very:
 
         cmd = self.commands[cmd_name]
         cmd.namespace = args
+        cmd.extra_args = extra or []
         try:
             cmd.execute()
         except VeryFatalError:
@@ -129,7 +130,7 @@ def print_banner():
 
 def main():
     try:
-        args = global_parser.parse_args()
+        args, extra = global_parser.parse_known_args()
     except SystemExit as e:
         if e.code != 0:
             err_console.print()
@@ -154,7 +155,7 @@ def main():
         print_banner()
         exit(1)
 
-    very.run(args.subcommand, args)
+    very.run(args.subcommand, args, extra)
 
 
 if __name__ == "__main__":

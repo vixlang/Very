@@ -10,17 +10,17 @@ class BuildCmd(Command):
     NAME = "build"
 
     def set_parser(self, p: argparse._SubParsersAction) -> argparse.ArgumentParser:
-        parser = p.add_parser(self.NAME, help="编译 Vix 项目")
+        parser = p.add_parser(
+            self.NAME,
+            help="编译 Vix 项目",
+            epilog="所有无法识别的参数将原样透传给 vixc，例如: very build -o hello.exe --target=wasm32",
+        )
         # 不在 argparse 注册 passthrough 参数, 避免被 -o / --target 等干扰
         return parser
 
     def execute(self):
-        # 从 sys.argv 截取 "build" 之后的全部参数, 原样透传 vixc
-        try:
-            idx = sys.argv.index("build")
-        except ValueError:
-            idx = 1  # fallback
-        args_list = sys.argv[idx + 1 :]
+        # argparse 无法识别的参数原样透传 vixc
+        args_list = self.extra_args
 
         # 确认在 vix 项目根目录
         if not Path("vindex.toml").exists():
