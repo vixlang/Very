@@ -274,10 +274,23 @@ def parse_pack_name(package_name: str) -> PackageNameInfo:
 log = Logger()
 
 
-if __name__ == "__main__":
-    print(parse_pack_name("fexcode.vnet@master"))
-    print(parse_pack_name("@fexcode.vnet@master"))
-    print(parse_pack_name("gitee.com:fexcode.vnet@master"))
-    print(parse_pack_name("gitee:fexcode.vnet@master"))
-    print(parse_pack_name("gitee:fexcode.vnet"))
-    print(parse_pack_name("fexcode.vnet"))
+def create_git_progress(package_name: str):
+    """Create a Rich Progress instance for git operations."""
+    from rich.progress import (
+        Progress,
+        BarColumn,
+        TextColumn,
+        TimeElapsedColumn,
+        TimeRemainingColumn,
+        TransferSpeedColumn,
+    )
+
+    return Progress(
+        TextColumn("[cyan]{task.description}"),
+        BarColumn(bar_width=40),
+        TextColumn("[progress.percentage]{task.percentage:>3.0f}%"),
+        TransferSpeedColumn(),
+        TimeRemainingColumn(),
+        TimeElapsedColumn(),
+        console=console,
+    )

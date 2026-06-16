@@ -1,18 +1,10 @@
 from .base import Command
 import argparse
 from pathlib import Path
-from .utils import log, parse_pack_name, VIndexTool, ask_confirm, console
+from .utils import log, parse_pack_name, VIndexTool, ask_confirm, console, create_git_progress
 from .cmd_add import GitProgress
 from git import Repo
 import shutil
-from rich.progress import (
-    Progress,
-    BarColumn,
-    TextColumn,
-    TimeElapsedColumn,
-    TimeRemainingColumn,
-    TransferSpeedColumn,
-)
 from rich.panel import Panel
 
 
@@ -53,15 +45,7 @@ class InstallCmd(Command):
                 continue
 
             log.info(f"正在安装 [cyan]{spec}[/cyan] ...")
-            with Progress(
-                TextColumn("[cyan]{task.description}"),
-                BarColumn(bar_width=40),
-                TextColumn("[progress.percentage]{task.percentage:>3.0f}%"),
-                TransferSpeedColumn(),
-                TimeRemainingColumn(),
-                TimeElapsedColumn(),
-                console=console,
-            ) as progress:
+            with create_git_progress(packinfo.full_name) as progress:
                 git_progress = GitProgress(progress, packinfo.full_name)
                 try:
                     Repo.clone_from(
