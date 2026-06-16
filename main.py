@@ -89,6 +89,8 @@ class Very:
             console.print()
             log.warning("操作已取消")
             exit(0)
+        except SystemExit as e:
+            exit(e.code if e.code is not None else 1)
         except Exception as e:
             err_console.print()
             err_console.print(
