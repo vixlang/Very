@@ -4,20 +4,20 @@ from .utils import log, parse_pack_name, ask_confirm
 import shutil
 
 命令格式说明 = """
-[bold]very del 命令格式说明[/bold]
-
-[green]格式:[/green]
-    very del <包名>
-
-[green]注意:[/green]
-    • 默认仓库为 github.com
-    • 支持简写语法
-
-[green]示例:[/green]
-    very del fexcode.vnet                # 删除 github.com/fexcode/vnet
-    very del gitee.com:fexcode.vnet      # 删除 gitee.com/fexcode/vnet
-    very del gitee:fexcode.vnet          # .com 可以省略
-    very del @fexcode.vnet               # @ 符号开头默认为 gitee.com
+|======================== very del 命令格式说明 ========================|
+[#] 格式为:
+[>]     very del <包名>
+[/]
+[#] 注意：
+[-]     • 默认仓库为 github.com
+[-]     • 支持简写语法
+[/]
+[#] 示例：
+[-]     very del fexcode.vnet                # 删除 github.com/fexcode/vnet
+[-]     very del gitee.com:fexcode.vnet      # 删除 gitee.com:fexcode/vnet
+[-]     very del gitee:fexcode.vnet          # .com 可以省略
+[-]     very del @fexcode.vnet               # @ 符号开头默认为 gitee.com
+|==================================================================|
 """
 
 
