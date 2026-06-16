@@ -1,9 +1,20 @@
 from .base import Command as Command
-from . import cmd_add, cmd_del, cmd_list, cmd_prune, cmd_init, cmd_search, cmd_install, cmd_update
+from . import (
+    cmd_add,
+    cmd_build,
+    cmd_del,
+    cmd_list,
+    cmd_prune,
+    cmd_init,
+    cmd_search,
+    cmd_install,
+    cmd_update,
+)
 from .utils import log as log, console as console
 
 CMD_REGISTRY: dict[str, dict] = {
     "add": {"cls": cmd_add.AddCmd, "color": "green", "desc": "添加包"},
+    "build": {"cls": cmd_build.BuildCmd, "color": "cyan", "desc": "编译 Vix 项目"},
     "del": {"cls": cmd_del.DelCmd, "color": "red", "desc": "删除包"},
     "list": {"cls": cmd_list.ListCmd, "color": "cyan", "desc": "列出已安装的包"},
     "prune": {

@@ -121,9 +121,10 @@ class TestVery:
 
         v = Very(parser)
         v.register(cmd_classes)
-        assert len(v.commands) == 8
+        assert len(v.commands) == 9
         assert set(v.commands.keys()) == {
             "add",
+            "build",
             "del",
             "list",
             "prune",
