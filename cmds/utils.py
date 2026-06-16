@@ -69,10 +69,16 @@ def ask_confirm(prompt: str, default: bool = False) -> bool:
     return Confirm.ask(prompt, default=default)
 
 
-@dataclass
+@dataclass(frozen=True)
 class Config:
     VIX_HOME: Path = Path(os.getenv("VIX_HOME", "./.vix"))
     VIX_LIBS_PATH: Path = Path(os.getenv("VIX_HOME", "./.vix")) / "libs"
+
+
+# Package naming constants
+DEFAULT_HOST = "github.com"
+DEFAULT_ORG = "vixlang"
+VLIB_PREFIX = "vlib-"
 
 
 def iter_package_dirs(libs_path: Path) -> Iterator[tuple[Path, Path, Path, str]]:
@@ -163,7 +169,7 @@ class PackageNameInfo:
 def parse_pack_name(package_name: str) -> PackageNameInfo:
     original = package_name
     branch = None
-    default_host = "github.com"
+    default_host = DEFAULT_HOST
 
     # ── 1. @ 前缀 → gitee.com ──────────────────────────────
     if package_name.startswith("@") and "://" not in package_name:
@@ -229,7 +235,7 @@ def parse_pack_name(package_name: str) -> PackageNameInfo:
             master += ".com"
         path = re.sub(r"\.git$", "", path)
         if "/" not in path and "." not in path:
-            path = f"vixlang.vlib-{path}"
+            path = f"{DEFAULT_ORG}.{VLIB_PREFIX}{path}"
         if "/" not in path:
             path = path.replace(".", "/")
         parts = path.split("/")
@@ -260,8 +266,8 @@ def parse_pack_name(package_name: str) -> PackageNameInfo:
         else:
             raise ValueError(f"包名格式错误: {original}")
     else:
-        user_name = "vixlang"
-        repo_name = f"vlib-{package_name}"
+        user_name = DEFAULT_ORG
+        repo_name = f"{VLIB_PREFIX}{package_name}"
 
     return PackageNameInfo(
         git_master=default_host,

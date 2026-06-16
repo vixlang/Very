@@ -1,6 +1,6 @@
 from .base import Command
 import argparse
-from .utils import log, console, Config
+from .utils import log, console, Config, DEFAULT_ORG, VLIB_PREFIX
 import urllib.request
 import json
 import ssl
@@ -236,7 +236,7 @@ class SearchCmd(Command):
         per_page = 100
 
         while True:
-            url = f"https://api.github.com/orgs/vixlang/repos?per_page={per_page}&page={page}&type=sources"
+            url = f"https://api.github.com/orgs/{DEFAULT_ORG}/repos?per_page={per_page}&page={page}&type=sources"
 
             headers = {
                 "Accept": "application/vnd.github.v3+json",
@@ -254,7 +254,7 @@ class SearchCmd(Command):
 
                 # 过滤出 vix 包（通常以 vlib- 开头）
                 for repo in data:
-                    if repo["name"].startswith("vlib-") or repo["name"] == "ver":
+                    if repo["name"].startswith(VLIB_PREFIX) or repo["name"] == "ver":
                         packages.append(
                             {
                                 "name": repo["name"],
@@ -289,8 +289,8 @@ class SearchCmd(Command):
         for pkg in packages:
             # 简化包名显示（去掉 vlib- 前缀）
             short_name = (
-                pkg["name"].replace("vlib-", "", 1)
-                if pkg["name"].startswith("vlib-")
+                pkg["name"].replace(VLIB_PREFIX, "", 1)
+                if pkg["name"].startswith(VLIB_PREFIX)
                 else pkg["name"]
             )
 
@@ -391,7 +391,7 @@ class SearchCmd(Command):
         search_parser = p.add_parser(
             "search",
             help="搜索可用的包",
-            description="从 GitHub vixlang 组织中搜索可用的 vix 包",
+            description=f"从 GitHub {DEFAULT_ORG} 组织中搜索可用的 vix 包",
         )
         search_parser.add_argument(
             "keyword", nargs="?", default="", help="搜索关键词（可选），留空显示所有包"
