@@ -23,6 +23,7 @@ from .utils import log, console
 
 class BuildCmd(Command):
     NAME = "build"
+    silent: bool = False
 
     def set_parser(self, p: argparse._SubParsersAction) -> argparse.ArgumentParser:
         parser = p.add_parser(
@@ -92,7 +93,8 @@ class BuildCmd(Command):
         obj_path = cwd / f"{input_file.stem}.o"
         # -obj 可接文件路径: 显式指定输出位置, 避免 vixc 默认放到 <input>.o
         cmd = ["vixc", str(input_file), "-obj", str(obj_path)] + vixc_flags
-        console.print(f"  [cyan]ℹ[/cyan]  编译: [dim]{' '.join(cmd)}[/dim]")
+        if not self.silent:
+            console.print(f"  [cyan]ℹ[/cyan]  编译: [dim]{' '.join(cmd)}[/dim]")
         result = subprocess.run(cmd, cwd=cwd)
         return result.returncode, obj_path
 
@@ -102,13 +104,15 @@ class BuildCmd(Command):
         if not output_path.is_absolute():
             output_path = Path.cwd() / output_path  # 相对于项目根目录
         cmd = ["gcc", str(obj_path), "-o", str(output_path)]
-        console.print(f"  [cyan]ℹ[/cyan]  链接: [dim]{' '.join(cmd)}[/dim]")
+        if not self.silent:
+            console.print(f"  [cyan]ℹ[/cyan]  链接: [dim]{' '.join(cmd)}[/dim]")
         return subprocess.run(cmd).returncode
 
     def _compile_direct(self, input_file: Path, vixc_flags: list[str], cwd: Path) -> int:
         """降级方案: 直接由 vixc 处理编译+链接."""
         cmd = ["vixc", str(input_file)] + vixc_flags
-        console.print(f"  [cyan]ℹ[/cyan]  执行: [dim]{' '.join(cmd)}[/dim]")
+        if not self.silent:
+            console.print(f"  [cyan]ℹ[/cyan]  执行: [dim]{' '.join(cmd)}[/dim]")
         result = subprocess.run(cmd, cwd=cwd)
         return result.returncode
 

@@ -6,7 +6,7 @@ Vix language project management & build tool. CLI name: `very`.
 
 - **Python** >=3.13, **uv**-managed, setuptools build
 - Entrypoint: `main.py` → `main:main` (installed as `very` via `pyproject.toml` `[project.scripts]`)
-- Commands: `add`, `del`, `list`, `prune`, `init`, `search`, `install`, `update` — registered in `cmds/__init__.py`, all extend `Command` from `cmds/base.py`
+- Commands: `add`, `del`, `list`, `prune`, `init`, `search`, `install`, `update`, `run` — registered in `cmds/__init__.py`, all extend `Command` from `cmds/base.py`
 
 ## Commands
 
@@ -19,6 +19,7 @@ very prune [--empty-only | --invalid-only]
 very init <name>                     # scaffold new vix project
 very search [keyword] [--sort stars|updated|name] [--limit N] [--no-cache] [--clear-cache] [--cache-status]
 very build [vixc options...]         # compile main.vix; if gcc is available, use vixc -obj + gcc link, else direct vixc
+very run [-k|--keep] [vixc options...] # build + run + cleanup (keep with -k)
 very install                         # install deps from vindex.toml
 very update [<package>]              # git pull package(s)
 ```
@@ -64,4 +65,5 @@ PyPI index defaults to Tsinghua mirror (commented out in `pyproject.toml`; uncom
 ## Workflow
 
 - 任何修改都要及时 git 提交
+- **任何代码/功能修改后必须更新版本号 (pyproject.toml)**
 - 对于探索类型任务, 拆分模块发动多个 subagent 并发探索, 不要只用单个 agent

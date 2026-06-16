@@ -9,12 +9,14 @@ from . import (
     cmd_search,
     cmd_install,
     cmd_update,
+    cmd_run,
 )
 from .utils import log as log, console as console
 
 CMD_REGISTRY: dict[str, dict] = {
     "add": {"cls": cmd_add.AddCmd, "color": "green", "desc": "添加包"},
     "build": {"cls": cmd_build.BuildCmd, "color": "cyan", "desc": "编译 Vix 项目"},
+    "run": {"cls": cmd_run.RunCmd, "color": "yellow", "desc": "编译并运行 Vix 项目"},
     "del": {"cls": cmd_del.DelCmd, "color": "red", "desc": "删除包"},
     "list": {"cls": cmd_list.ListCmd, "color": "cyan", "desc": "列出已安装的包"},
     "prune": {

@@ -8,11 +8,7 @@ from .conftest import build_and_run_command
 
 
 def _fix_pack_path_default(monkeypatch, libs_path: Path) -> None:
-    monkeypatch.setattr(
-        PackageNameInfo.pack_path.fget,
-        "__defaults__",
-        (libs_path,),
-    )
+    monkeypatch.setattr(PackageNameInfo, "_default_parent", libs_path)
 
 
 def _make_clone_mock(*, create_vindex: bool = True, fail: bool = False):

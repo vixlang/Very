@@ -9,6 +9,7 @@ from pathlib import Path
 import os
 from collections.abc import Iterator
 from dataclasses import dataclass
+from typing import ClassVar
 
 console = Console()
 err_console = Console(file=sys.stderr)
@@ -138,8 +139,11 @@ class PackageNameInfo:
 
     branch_name: str | None = None
 
+    _default_parent: ClassVar[Path] = Config.VIX_LIBS_PATH
+
     @property
-    def pack_path(self, parent: Path = Config.VIX_LIBS_PATH) -> Path:
+    def pack_path(self) -> Path:
+        parent = PackageNameInfo._default_parent
         path = parent / self.git_master / self.user_name / self.repo_name
         try:
             path.resolve().relative_to(parent.resolve())

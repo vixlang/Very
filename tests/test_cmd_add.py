@@ -18,11 +18,7 @@ from .conftest import build_and_run_command
 
 def _fix_pack_path_default(monkeypatch, libs_path: Path) -> None:
     """Point ``PackageNameInfo.pack_path`` default parent to *libs_path*."""
-    monkeypatch.setattr(
-        PackageNameInfo.pack_path.fget,
-        "__defaults__",
-        (libs_path,),
-    )
+    monkeypatch.setattr(PackageNameInfo, "_default_parent", libs_path)
 
 
 def _patch_stderr(monkeypatch) -> StringIO:
