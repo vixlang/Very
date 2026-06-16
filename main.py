@@ -6,17 +6,13 @@ from rich.text import Text
 import argparse
 import sys
 
-# 从 pyproject.toml 读取版本号
+# 从包元数据读取版本号
 try:
-    import tomllib
-    from pathlib import Path
+    from importlib.metadata import version
 
-    pyproject_path = Path(__file__).parent / "pyproject.toml"
-    with open(pyproject_path, "rb") as f:
-        pyproject_data = tomllib.load(f)
-    VERSION = pyproject_data.get("project", {}).get("version", "unknown")
+    VERSION = version("very")
 except Exception:
-    VERSION = "0.2.0"  #  fallback 版本
+    VERSION = "0.0.0"  # fallback
 
 
 def show_version():
