@@ -19,7 +19,7 @@ very prune [--empty-only | --invalid-only]
 very init <name>                     # scaffold new vix project
 very search [keyword] [--sort stars|updated|name] [--limit N] [--no-cache] [--clear-cache] [--cache-status]
 very build [vixc options...]         # compile main.vix with system vixc (pass-through)
-very install                         # install deps from vix.toml
+very install                         # install deps from vindex.toml
 very update [<package>]              # git pull package(s)
 ```
 

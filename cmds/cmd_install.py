@@ -20,23 +20,23 @@ class InstallCmd(Command):
     NAME = "install"
 
     def set_parser(self, p: argparse._SubParsersAction) -> argparse.ArgumentParser:
-        parser = p.add_parser(self.NAME, help="安装 vix.toml 中声明的所有依赖")
+        parser = p.add_parser(self.NAME, help="安装 vindex.toml 中声明的所有依赖")
         return parser
 
     def execute(self):
-        vix_toml_path = Path("vix.toml")
-        if not vix_toml_path.exists():
-            log.error("未找到 vix.toml，请确保在项目根目录运行此命令")
+        vindex_toml_path = Path("vindex.toml")
+        if not vindex_toml_path.exists():
+            log.error("未找到 vindex.toml，请确保在项目根目录运行此命令")
             return
 
         import tomllib
 
-        with open(vix_toml_path, "rb") as f:
+        with open(vindex_toml_path, "rb") as f:
             data = tomllib.load(f)
 
         deps = data.get("deps", [])
         if not deps:
-            log.info("vix.toml 中没有声明依赖")
+            log.info("vindex.toml 中没有声明依赖")
             return
 
         log.section("安装依赖")

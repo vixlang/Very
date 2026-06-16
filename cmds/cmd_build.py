@@ -22,8 +22,8 @@ class BuildCmd(Command):
         args_list = self.namespace.vixc_args
 
         # 确认在 vix 项目根目录
-        if not Path("vix.toml").exists():
-            log.error("未找到 vix.toml，请确保在项目根目录运行此命令")
+        if not Path("vindex.toml").exists():
+            log.error("未找到 vindex.toml，请确保在项目根目录运行此命令")
             return
 
         # 检查参数中是否已包含 .vix 输入文件

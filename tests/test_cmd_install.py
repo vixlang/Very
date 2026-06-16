@@ -30,19 +30,19 @@ def _make_clone_mock(*, create_vindex: bool = True, fail: bool = False):
 
 
 class TestInstallCmd:
-    def test_no_vix_toml(self, tmp_config, monkeypatch):
+    def test_no_vindex_toml(self, tmp_config, monkeypatch):
         _fix_pack_path_default(monkeypatch, tmp_config["libs_path"])
         build_and_run_command(InstallCmd, namespace=argparse.Namespace())
 
     def test_empty_deps(self, tmp_config, monkeypatch, tmp_path):
         _fix_pack_path_default(monkeypatch, tmp_config["libs_path"])
-        (tmp_path / "vix.toml").write_text('[project]\nname = "test"\n\ndeps = []\n')
+        (tmp_path / "vindex.toml").write_text('[project]\nname = "test"\n\ndeps = []\n')
         monkeypatch.chdir(tmp_path)
         build_and_run_command(InstallCmd, namespace=argparse.Namespace())
 
     def test_install_single_dep(self, tmp_config, monkeypatch, tmp_path):
         _fix_pack_path_default(monkeypatch, tmp_config["libs_path"])
-        (tmp_path / "vix.toml").write_text('deps = ["fexcode.vnet"]\n')
+        (tmp_path / "vindex.toml").write_text('deps = ["fexcode.vnet"]\n')
         monkeypatch.chdir(tmp_path)
         monkeypatch.setattr(
             "cmds.cmd_add.Repo.clone_from",
@@ -62,14 +62,14 @@ class TestInstallCmd:
         (pkg / "vindex.toml").write_text(
             '[package]\nname = "vnet"\nversion = "1.0.0"\n'
         )
-        (tmp_path / "vix.toml").write_text('deps = ["fexcode.vnet"]\n')
+        (tmp_path / "vindex.toml").write_text('deps = ["fexcode.vnet"]\n')
         monkeypatch.chdir(tmp_path)
 
         build_and_run_command(InstallCmd, namespace=argparse.Namespace())
 
     def test_install_clone_failure(self, tmp_config, monkeypatch, tmp_path):
         _fix_pack_path_default(monkeypatch, tmp_config["libs_path"])
-        (tmp_path / "vix.toml").write_text('deps = ["fexcode.vnet"]\n')
+        (tmp_path / "vindex.toml").write_text('deps = ["fexcode.vnet"]\n')
         monkeypatch.chdir(tmp_path)
         monkeypatch.setattr(
             "cmds.cmd_add.Repo.clone_from",
@@ -83,7 +83,7 @@ class TestInstallCmd:
 
     def test_install_no_vindex(self, tmp_config, monkeypatch, tmp_path):
         _fix_pack_path_default(monkeypatch, tmp_config["libs_path"])
-        (tmp_path / "vix.toml").write_text('deps = ["fexcode.vnet"]\n')
+        (tmp_path / "vindex.toml").write_text('deps = ["fexcode.vnet"]\n')
         monkeypatch.chdir(tmp_path)
         monkeypatch.setattr(
             "cmds.cmd_add.Repo.clone_from",

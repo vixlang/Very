@@ -27,7 +27,7 @@ CMD_REGISTRY: dict[str, dict] = {
     "install": {
         "cls": cmd_install.InstallCmd,
         "color": "green",
-        "desc": "安装 vix.toml 中声明的所有依赖",
+        "desc": "安装 vindex.toml 中声明的所有依赖",
     },
     "update": {
         "cls": cmd_update.UpdateCmd,

@@ -132,10 +132,10 @@ very init my-project    # 创建 my-project/ 项目目录
 #### 生成结构
 ```
 my-project/
-├── vix.toml          # 项目配置
-├── src/
-│   └── main.vix      # 入口文件
-└── .gitignore
+├── vindex.toml       # 项目配置
+├── main.vix          # 入口文件
+├── .gitignore
+└── README.md
 ```
 
 ### very search - 搜索可用的包
