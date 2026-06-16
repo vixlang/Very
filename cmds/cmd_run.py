@@ -57,10 +57,9 @@ class RunCmd(Command):
 
         if verbose:
             console.print("[bold cyan]▶ 编译项目...[/bold cyan]")
-        build_cmd = BuildCmd.__new__(BuildCmd)
-        build_cmd.namespace = self.namespace
-        build_cmd.extra_args = extra
-        build_cmd.silent = not verbose
+        build_cmd = BuildCmd.create_for_subcommand(
+            self.namespace, extra, silent=not verbose
+        )
         try:
             build_cmd.execute()
         except SystemExit as e:

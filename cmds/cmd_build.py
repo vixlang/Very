@@ -25,6 +25,19 @@ class BuildCmd(Command):
     NAME = "build"
     silent: bool = False
 
+    @classmethod
+    def create_for_subcommand(cls, namespace, extra_args: list[str], silent: bool = False) -> "BuildCmd":
+        """Create a BuildCmd instance for use by other commands (e.g., RunCmd).
+
+        This avoids bypassing __init__ with __new__.
+        """
+        instance = cls.__new__(cls)
+        instance.parser = None
+        instance.namespace = namespace
+        instance.extra_args = extra_args
+        instance.silent = silent
+        return instance
+
     def set_parser(self, p: argparse._SubParsersAction) -> argparse.ArgumentParser:
         parser = p.add_parser(
             self.NAME,
