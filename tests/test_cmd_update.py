@@ -54,9 +54,7 @@ class TestUpdateCmd:
     def test_update_all_no_packages(self, tmp_config, monkeypatch):
         _fix_pack_path_default(monkeypatch, tmp_config["libs_path"])
 
-        build_and_run_command(
-            UpdateCmd, namespace=argparse.Namespace(package=None)
-        )
+        build_and_run_command(UpdateCmd, namespace=argparse.Namespace(package=None))
 
     def test_update_all_with_packages(self, tmp_config, monkeypatch):
         _fix_pack_path_default(monkeypatch, tmp_config["libs_path"])
@@ -68,6 +66,4 @@ class TestUpdateCmd:
 
         monkeypatch.setattr("cmds.cmd_update.Repo", _make_mock_repo(exists=True))
 
-        build_and_run_command(
-            UpdateCmd, namespace=argparse.Namespace(package=None)
-        )
+        build_and_run_command(UpdateCmd, namespace=argparse.Namespace(package=None))

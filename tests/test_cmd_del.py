@@ -24,7 +24,6 @@ def _patch_stderr(monkeypatch) -> StringIO:
     buf = StringIO()
     new_console = Console(file=buf)
     monkeypatch.setattr("cmds.utils.err_console", new_console)
-    monkeypatch.setattr("cmds.cmd_del.err_console", new_console)
     return buf
 
 

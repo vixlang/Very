@@ -114,7 +114,7 @@ class VIndexTool:
     def __init__(self, dir_path: Path):
         self.path = dir_path / "vindex.toml"
 
-    def content(self, package_name=None) -> dict[str, object] | None:
+    def content(self) -> dict[str, object] | None:
         """读取 vindex.toml 并返回解析后的字典。
 
         返回 None 表示文件不存在（而非解析失败——解析失败会抛异常）。
@@ -144,9 +144,7 @@ class PackageNameInfo:
         try:
             path.resolve().relative_to(parent.resolve())
         except ValueError:
-            raise ValueError(
-                f"包路径穿越检测: {path} 不在 {parent} 下"
-            )
+            raise ValueError(f"包路径穿越检测: {path} 不在 {parent} 下")
         return path
 
     @property

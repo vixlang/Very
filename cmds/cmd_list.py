@@ -16,8 +16,10 @@ class ListCmd(Command):
 
         if not libs_path.exists():
             log.critical("包目录不存在!")
+            return
         if not libs_path.is_dir():
             log.critical("包路径不是目录!")
+            return
 
         if tree_mode:
             self._print_tree(libs_path)

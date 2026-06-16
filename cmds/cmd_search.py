@@ -11,7 +11,6 @@ from rich.live import Live
 from rich.spinner import Spinner
 import time
 
-
 # 显式 SSL 上下文，确保 HTTPS 证书验证
 _SSL_CTX = ssl.create_default_context()
 
@@ -68,7 +67,7 @@ class SearchCmd(Command):
                     p
                     for p in packages
                     if keyword.lower() in p["name"].lower()
-                    or keyword.lower() in p.get("description", "").lower()
+                    or keyword.lower() in (p.get("description") or "").lower()
                 ]
             else:
                 filtered = packages
@@ -295,13 +294,10 @@ class SearchCmd(Command):
                 else pkg["name"]
             )
 
+            desc = pkg.get("description") or ""
             table.add_row(
                 short_name,
-                (
-                    pkg["description"][:47] + "..."
-                    if len(pkg["description"]) > 50
-                    else pkg["description"]
-                ),
+                desc[:47] + "..." if len(desc) > 50 else desc,
                 str(pkg["stars"]),
                 pkg["language"],
                 pkg["updated"],

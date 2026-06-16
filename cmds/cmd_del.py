@@ -1,8 +1,7 @@
 from .base import Command
 import argparse
-from .utils import log, err_console, parse_pack_name, ask_confirm
+from .utils import log, parse_pack_name, ask_confirm
 import shutil
-from rich.panel import Panel
 
 命令格式说明 = """
 [bold]very del 命令格式说明[/bold]
@@ -31,25 +30,17 @@ class DelCmd(Command):
         PACK_PATH = pack_info.pack_path
 
         if not PACK_PATH.exists():
-
-            err_console.print()
-            err_console.print(
-                Panel(
-                    f"[bold red]包不存在: [white]{pack_info.full_name}[/white][/bold red]\n\n"
-                    f"[yellow]可能的原因:[/yellow]\n"
-                    f"  • 包名拼写错误\n"
-                    f"  • 该包尚未安装\n"
-                    f"  • 包路径不正确\n\n"
-                    f"[dim]使用以下命令查看已安装的包:[/dim]\n"
-                    f"  [green]very list[/green]\n\n"
-                    f"[dim]或使用以下命令安装包:[/dim]\n"
-                    f"  [green]very add {package_name}[/green]",
-                    title="[bold red]✘ 错误[/bold red]",
-                    border_style="red",
-                    padding=(1, 2),
-                )
+            log.error(
+                f"包不存在: [white]{pack_info.full_name}[/white]\n\n"
+                f"[yellow]可能的原因:[/yellow]\n"
+                f"  • 包名拼写错误\n"
+                f"  • 该包尚未安装\n"
+                f"  • 包路径不正确\n\n"
+                f"[dim]使用以下命令查看已安装的包:[/dim]\n"
+                f"  [green]very list[/green]\n\n"
+                f"[dim]或使用以下命令安装包:[/dim]\n"
+                f"  [green]very add {package_name}[/green]"
             )
-            err_console.print()
             return
 
         log.section(f"删除包: {pack_info.full_name}")

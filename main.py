@@ -2,7 +2,6 @@ from cmds import cmds, Command, CMD_REGISTRY, log, console
 from cmds.utils import err_console, VeryFatalError
 from rich.panel import Panel
 from rich.text import Text
-from rich.console import Console
 
 import argparse
 import sys
@@ -22,8 +21,6 @@ except Exception:
 
 def show_version():
     """显示彩色版本信息"""
-    console = Console()
-
     console.print()
 
     # 创建彩色的版本信息

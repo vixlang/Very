@@ -126,7 +126,7 @@ class AddCmd(Command):
                 return
 
         log.info("正在检查包信息...")
-        content = VIndexTool(PACK_PATH).content(package_name=packinfo.full_name)
+        content = VIndexTool(PACK_PATH).content()
         if content is None:
             console.print()
             console.print(
