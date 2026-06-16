@@ -29,14 +29,24 @@ class BuildCmd(Command):
         # 检查参数中是否已包含 .vix 输入文件
         has_input = any(a.endswith(".vix") for a in args_list)
         if not has_input:
-            main_vix = Path("main.vix")
+            main_vix = Path("main.vix").resolve()
             if not main_vix.exists():
                 log.error("未找到 main.vix，请指定输入文件或确保项目根目录有 main.vix")
                 return
             args_list = [str(main_vix)] + args_list
+        else:
+            # 将用户传入的 .vix 相对路径转为绝对路径
+            args_list = [
+                str(Path(a).resolve()) if a.endswith(".vix") else a
+                for a in args_list
+            ]
+
+        # 构建产物输出到 .vix/temp
+        temp_dir = Path(".vix/temp")
+        temp_dir.mkdir(parents=True, exist_ok=True)
 
         cmd = ["vixc"] + args_list
         log.info(f"执行: [dim]{' '.join(cmd)}[/dim]")
 
-        result = subprocess.run(cmd)
+        result = subprocess.run(cmd, cwd=temp_dir)
         sys.exit(result.returncode)
