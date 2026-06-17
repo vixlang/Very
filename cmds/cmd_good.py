@@ -19,37 +19,79 @@ class GoodCmd(Command):
             formatter_class=argparse.RawDescriptionHelpFormatter,
         )
         parser.add_argument(
-            "file", nargs="?", default="main.vix", help="要检查的 .vix 文件 (默认: main.vix)"
+            "files",
+            nargs="*",
+            default=[],
+            help="要检查的 .vix 文件或目录 (支持通配符, 默认: main.vix)",
         )
         return parser
+
+    def _resolve_files(self, patterns: list[str]) -> list[Path]:
+        if not patterns:
+            main = Path("main.vix")
+            return [main] if main.exists() else []
+
+        files: list[Path] = []
+        seen: set[Path] = set()
+        for p in patterns:
+            path = Path(p)
+            if path.is_dir():
+                for f in sorted(path.rglob("*.vix")):
+                    if f not in seen:
+                        files.append(f)
+                        seen.add(f)
+            else:
+                expanded = list(Path(".").glob(p)) if ("*" in p or "?" in p) else [path]
+                for f in expanded:
+                    resolved = f.resolve()
+                    if f.exists() and resolved not in seen:
+                        files.append(f)
+                        seen.add(resolved)
+        return files
 
     def execute(self):
         if not Path("vindex.toml").exists():
             log.error("未找到 vindex.toml，请确保在项目根目录运行此命令")
             return
 
-        input_file = Path(self.namespace.file)
-        if not input_file.exists():
-            log.error(f"文件不存在: {input_file}")
+        patterns = self.namespace.files
+        files = self._resolve_files(patterns)
+
+        if not files:
+            if patterns:
+                log.error(f"未找到匹配的文件: {' '.join(patterns)}")
+            else:
+                log.error("未找到 main.vix，请指定要检查的文件")
             return
 
-        console.print(f"  [green]ℹ[/green]  检查: [dim]{input_file}[/dim]")
-        result = subprocess.run(
-            ["vixc", str(input_file), "--check"],
-            cwd=Path(".").resolve(),
-        )
-        if result.returncode == 0:
-            console.print("  [green]✔[/green]  语法和类型检查通过")
-        sys.exit(result.returncode)
+        has_error = False
+        for i, f in enumerate(files):
+            if i > 0:
+                console.print()
+            console.print(f"  [green]ℹ[/green]  检查: [dim]{f}[/dim]")
+            result = subprocess.run(
+                ["vixc", str(f), "--check"],
+                cwd=Path(".").resolve(),
+            )
+            if result.returncode != 0:
+                has_error = True
+
+        if not has_error:
+            console.print("  [green]✔[/green]  全部通过")
+        sys.exit(1 if has_error else 0)
 
 
 命令格式说明 = """
 |======================== very good 命令格式说明 ========================|
 [#] 格式为:
-[>]     very good [<file>]
+[>]     very good [<file>...]
 [/]
 [#] 说明：检查 Vix 语法和类型，不生成输出文件
 [#] 参数:
-[>]     file      要检查的 .vix 文件（默认 main.vix）
+[>]     file      要检查的 .vix 文件、目录或通配符（默认 main.vix）
+[#] 示例:
+[>]     very good
+[>]     very good src/
+[>]     very good src/*.vix lib/*.vix
 |==================================================================|
 """
