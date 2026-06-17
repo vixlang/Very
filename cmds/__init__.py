@@ -3,6 +3,7 @@ from . import (
     cmd_add,
     cmd_build,
     cmd_del,
+    cmd_good,
     cmd_list,
     cmd_prune,
     cmd_init,
@@ -18,6 +19,7 @@ CMD_REGISTRY: dict[str, dict] = {
     "build": {"cls": cmd_build.BuildCmd, "color": "cyan", "desc": "编译 Vix 项目"},
     "run": {"cls": cmd_run.RunCmd, "color": "yellow", "desc": "编译并运行 Vix 项目"},
     "del": {"cls": cmd_del.DelCmd, "color": "red", "desc": "删除包"},
+    "good": {"cls": cmd_good.GoodCmd, "color": "green", "desc": "检查语法和类型"},
     "list": {"cls": cmd_list.ListCmd, "color": "cyan", "desc": "列出已安装的包"},
     "prune": {
         "cls": cmd_prune.PruneCmd,
