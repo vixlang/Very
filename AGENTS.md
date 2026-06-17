@@ -12,7 +12,7 @@ Vix language project management & build tool. CLI name: `very`.
 
 ```bash
 uv tool install .                    # install `very` CLI
-very add <package>                   # git-clone into .vix/libs/
+very add <package> [-g|--global]     # git-clone into .vix/libs/ (local default; -g for $VIX_HOME)
 very del <package>                   # rm -rf from .vix/libs/
 very list [-t|--tree]                # list installed packages
 very prune [--empty-only | --invalid-only]
@@ -44,11 +44,12 @@ ruff check .       # linter (dev dep)
 black .            # formatter (dev dep)
 ```
 
-Test framework: `pytest` (dev dep). Run: `uv run pytest tests/` (100 tests, all passing).
+Test framework: `pytest` (dev dep). Run: `uv run pytest tests/` (110 tests, all passing).
 
 ## Config & paths
 
 - `VIX_HOME` env var overrides default `.vix/` (gitignored)
+- `very add` installs locally (`.vix/libs/`) by default; use `-g` for `$VIX_HOME/libs/`
 - Installed packages: `$VIX_HOME/libs/{host}/{user}/{repo}/`
 - Package validity: must contain `vindex.toml`
 - Search cache: `$VIX_HOME/cache/search_cache.json` (1 h expiry)

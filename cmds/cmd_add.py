@@ -1,7 +1,8 @@
 from .base import Command
 import argparse
 from git import Repo, remote
-from .utils import log, VIndexTool, parse_pack_name, ask_confirm, console, create_git_progress
+from .utils import log, VIndexTool, parse_pack_name, ask_confirm, console, create_git_progress, Config
+from pathlib import Path
 import shutil
 from rich.panel import Panel
 
@@ -57,7 +58,9 @@ class AddCmd(Command):
 
     def execute(self):
         packname = getattr(self.namespace, "package", "unknown")
-        packinfo = parse_pack_name(packname)
+        global_install = getattr(self.namespace, "global_install", False)
+        parent = Config.VIX_LIBS_PATH if global_install else Path.cwd() / ".vix" / "libs"
+        packinfo = parse_pack_name(packname, parent=parent)
         PACK_PATH = packinfo.pack_path
 
         if PACK_PATH.exists():
@@ -141,6 +144,12 @@ class AddCmd(Command):
             formatter_class=argparse.RawDescriptionHelpFormatter,
         )
         add_parser.add_argument("package", help="需要添加的包名")
+        add_parser.add_argument(
+            "-g", "--global",
+            dest="global_install",
+            action="store_true",
+            help="全局安装到 VIX_HOME 目录",
+        )
         return add_parser
 
 

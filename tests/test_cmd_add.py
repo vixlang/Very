@@ -7,7 +7,7 @@ from git.remote import RemoteProgress
 from rich.console import Console
 
 from cmds.cmd_add import AddCmd, GitProgress
-from cmds.utils import PackageNameInfo
+from cmds.utils import PackageNameInfo, Config
 
 from .conftest import build_and_run_command
 
@@ -19,6 +19,7 @@ from .conftest import build_and_run_command
 def _fix_pack_path_default(monkeypatch, libs_path: Path) -> None:
     """Point ``PackageNameInfo.pack_path`` default parent to *libs_path*."""
     monkeypatch.setattr(PackageNameInfo, "_default_parent", libs_path)
+    monkeypatch.setattr(Config, "VIX_LIBS_PATH", libs_path)
 
 
 def _patch_stderr(monkeypatch) -> StringIO:
@@ -94,7 +95,7 @@ class TestAddCmd:
         )
 
         build_and_run_command(
-            AddCmd, namespace=argparse.Namespace(package="fexcode.vnet")
+            AddCmd, namespace=argparse.Namespace(package="fexcode.vnet", global_install=True)
         )
 
         pkg = tmp_config["libs_path"] / "github.com" / "fexcode" / "vnet"
@@ -120,7 +121,7 @@ class TestAddCmd:
         )
 
         build_and_run_command(
-            AddCmd, namespace=argparse.Namespace(package="fexcode.vnet")
+            AddCmd, namespace=argparse.Namespace(package="fexcode.vnet", global_install=True)
         )
 
         assert not old_file.exists()
@@ -141,7 +142,7 @@ class TestAddCmd:
         )
 
         build_and_run_command(
-            AddCmd, namespace=argparse.Namespace(package="fexcode.vnet")
+            AddCmd, namespace=argparse.Namespace(package="fexcode.vnet", global_install=True)
         )
 
         assert old_file.exists()
@@ -157,7 +158,7 @@ class TestAddCmd:
         )
 
         build_and_run_command(
-            AddCmd, namespace=argparse.Namespace(package="fexcode.vnet")
+            AddCmd, namespace=argparse.Namespace(package="fexcode.vnet", global_install=True)
         )
 
         pkg = tmp_config["libs_path"] / "github.com" / "fexcode" / "vnet"
@@ -178,7 +179,7 @@ class TestAddCmd:
         )
 
         build_and_run_command(
-            AddCmd, namespace=argparse.Namespace(package="fexcode.vnet")
+            AddCmd, namespace=argparse.Namespace(package="fexcode.vnet", global_install=True)
         )
 
         pkg = tmp_config["libs_path"] / "github.com" / "fexcode" / "vnet"
@@ -198,7 +199,7 @@ class TestAddCmd:
         )
 
         build_and_run_command(
-            AddCmd, namespace=argparse.Namespace(package="fexcode.vnet")
+            AddCmd, namespace=argparse.Namespace(package="fexcode.vnet", global_install=True)
         )
 
         pkg = tmp_config["libs_path"] / "github.com" / "fexcode" / "vnet"
@@ -224,7 +225,7 @@ class TestAddCmd:
         )
 
         build_and_run_command(
-            AddCmd, namespace=argparse.Namespace(package="fexcode.vnet")
+            AddCmd, namespace=argparse.Namespace(package="fexcode.vnet", global_install=True)
         )
 
         assert not pkg.exists()

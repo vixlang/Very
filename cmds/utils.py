@@ -144,12 +144,13 @@ class PackageNameInfo:
     user_name: str = "vixlang"
 
     branch_name: str | None = None
+    parent: Path | None = None
 
     _default_parent: ClassVar[Path] = Config.VIX_LIBS_PATH
 
     @property
     def pack_path(self) -> Path:
-        parent = PackageNameInfo._default_parent
+        parent = self.parent or PackageNameInfo._default_parent
         path = parent / self.git_master / self.user_name / self.repo_name
         try:
             path.resolve().relative_to(parent.resolve())
@@ -166,7 +167,7 @@ class PackageNameInfo:
         return f"{self.git_master}:{self.user_name}.{self.repo_name}"
 
 
-def parse_pack_name(package_name: str) -> PackageNameInfo:
+def parse_pack_name(package_name: str, parent: Path | None = None) -> PackageNameInfo:
     original = package_name
     branch = None
     default_host = DEFAULT_HOST
@@ -194,6 +195,7 @@ def parse_pack_name(package_name: str) -> PackageNameInfo:
             user_name=user_name,
             repo_name=repo_name,
             branch_name=branch,
+            parent=parent,
         )
 
     # ── 3. 提取分支（此时已排除 URL，@ 不会被混淆）─────────
@@ -227,6 +229,7 @@ def parse_pack_name(package_name: str) -> PackageNameInfo:
             user_name=user_name,
             repo_name=repo_name,
             branch_name=branch,
+            parent=parent,
         )
 
     if ":" in package_name:
@@ -248,6 +251,7 @@ def parse_pack_name(package_name: str) -> PackageNameInfo:
             user_name=user_name,
             repo_name=repo_name,
             branch_name=branch,
+            parent=parent,
         )
 
     if "/" in package_name:
@@ -274,6 +278,7 @@ def parse_pack_name(package_name: str) -> PackageNameInfo:
         user_name=user_name,
         repo_name=repo_name,
         branch_name=branch,
+        parent=parent,
     )
 
 
