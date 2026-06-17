@@ -42,8 +42,19 @@ deps = []
 
             (project_path / "vindex.toml").write_text(vindex_toml_content)
 
-            main_vix_content = """fn main(): i32 {
-    print("Hello, Vix!")
+            (project_path / "src").mkdir()
+
+            lib_vix_content = """pub fn greet() {
+    print("Hello from src/lib.vix!")
+}
+"""
+
+            (project_path / "src" / "lib.vix").write_text(lib_vix_content)
+
+            main_vix_content = """import "src/lib.vix"
+
+fn main(): i32 {
+    greet()
     return 0
 }
 """
@@ -91,6 +102,8 @@ very build
 {project_name}/
 ├── vindex.toml       # 项目配置
 ├── main.vix          # 入口文件
+├── src/
+│   └── lib.vix       # 库模块
 ├── .gitignore
 └── README.md
 ```

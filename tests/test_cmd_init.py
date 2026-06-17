@@ -41,7 +41,11 @@ class TestInitCmd:
         assert (proj / "vindex.toml").is_file()
         assert 'name = "myproject"' in (proj / "vindex.toml").read_text("utf-8")
         assert (proj / "main.vix").is_file()
-        assert "Hello, Vix!" in (proj / "main.vix").read_text("utf-8")
+        assert 'import "src/lib.vix"' in (proj / "main.vix").read_text("utf-8")
+        assert "greet()" in (proj / "main.vix").read_text("utf-8")
+        assert (proj / "src").is_dir()
+        assert (proj / "src" / "lib.vix").is_file()
+        assert "pub fn greet" in (proj / "src" / "lib.vix").read_text("utf-8")
         assert (proj / ".gitignore").is_file()
         assert (proj / "README.md").is_file()
 
