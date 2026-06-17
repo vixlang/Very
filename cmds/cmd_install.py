@@ -16,6 +16,11 @@ class InstallCmd(Command):
         return parser
 
     def execute(self):
+        if getattr(self, "extra_args", None):
+            pkg = self.extra_args[0]
+            log.info(f"收到包名 '{pkg}'，也许你是想用 [bold cyan]very add {pkg}[/bold cyan] ？")
+            return
+
         vindex_toml_path = Path("vindex.toml")
         if not vindex_toml_path.exists():
             log.error("未找到 vindex.toml，请确保在项目根目录运行此命令")
