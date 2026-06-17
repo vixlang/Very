@@ -1,14 +1,14 @@
 """very build — 编译 Vix 项目
 
 流程（当系统装有 gcc 时）:
-  1. vixc <input>.vix -obj [flags...]     # 编译到目标文件, 产物在 .vix/temp/
-  2. gcc   <stem>.o           -o <output>  # 链接为可执行文件, 输出到项目根目录
+  1. vixc <input>.vix -obj <temp>/<stem>.o [flags...]  # .o 输出到 .vix/temp/
+  2. gcc   <temp>/<stem>.o   -o <output>                # 链接为可执行文件
 
 流程（无 gcc 时）:
   1. vixc <input>.vix [flags...]          # 全权交给 vixc 处理编译+链接
 
 -o 参数会被截获用于指定输出文件名, 其余参数原样透传 vixc。
-所有中间文件（.o .ll .s 等）始终生成在 .vix/temp/ 下, 不污染项目根目录。
+vixc 始终从项目根目录运行（使 import 路径正确解析），产物输出到 .vix/temp/。
 """
 
 from .base import Command
@@ -97,18 +97,24 @@ class BuildCmd(Command):
         """检测系统是否可用 gcc."""
         return shutil.which("gcc") is not None
 
-    def _compile_to_obj(self, input_file: Path, vixc_flags: list[str], cwd: Path) -> tuple[int, Path]:
+    def _compile_to_obj(self, input_file: Path, vixc_flags: list[str], root_dir: Path, temp_dir: Path) -> tuple[int, Path]:
         """第 1 步: vixc 编译到目标文件 (.o).
+
+        Args:
+            input_file: 源文件绝对路径
+            vixc_flags: 透传 vixc 参数
+            root_dir:   项目根目录（作为 vixc 工作目录，使 import 路径正确解析）
+            temp_dir:   临时目录，.o 文件输出到此
 
         Returns:
             (returncode, obj_path) — obj_path 是 .o 文件的绝对路径。
         """
-        obj_path = cwd / f"{input_file.stem}.o"
+        obj_path = temp_dir / f"{input_file.stem}.o"
         # -obj 可接文件路径: 显式指定输出位置, 避免 vixc 默认放到 <input>.o
         cmd = ["vixc", str(input_file), "-obj", str(obj_path)] + vixc_flags
         if not self.silent:
             console.print(f"  [cyan]ℹ[/cyan]  编译: [dim]{' '.join(cmd)}[/dim]")
-        result = subprocess.run(cmd, cwd=cwd)
+        result = subprocess.run(cmd, cwd=root_dir)
         return result.returncode, obj_path
 
     def _link_with_gcc(self, obj_path: Path, output_name: str) -> int:
@@ -121,12 +127,12 @@ class BuildCmd(Command):
             console.print(f"  [cyan]ℹ[/cyan]  链接: [dim]{' '.join(cmd)}[/dim]")
         return subprocess.run(cmd).returncode
 
-    def _compile_direct(self, input_file: Path, vixc_flags: list[str], cwd: Path) -> int:
+    def _compile_direct(self, input_file: Path, vixc_flags: list[str], root_dir: Path) -> int:
         """降级方案: 直接由 vixc 处理编译+链接."""
         cmd = ["vixc", str(input_file)] + vixc_flags
         if not self.silent:
             console.print(f"  [cyan]ℹ[/cyan]  执行: [dim]{' '.join(cmd)}[/dim]")
-        result = subprocess.run(cmd, cwd=cwd)
+        result = subprocess.run(cmd, cwd=root_dir)
         return result.returncode
 
     # ---------------------------------------------------------------
@@ -158,7 +164,8 @@ class BuildCmd(Command):
             input_file = candidate
         # vixc_flags 中已不含 -o 和 .vix 文件, 可安全透传
 
-        # —— 5. 准备输出目录 (绝对路径, gcc 需要) ——
+        # —— 5. 准备输出目录 ——
+        root_dir = Path(".").resolve()
         temp_dir = Path(".vix/temp").resolve()
         temp_dir.mkdir(parents=True, exist_ok=True)
 
@@ -166,13 +173,13 @@ class BuildCmd(Command):
         has_gcc = self._has_gcc()
         if has_gcc:
             # 方案 A: vixc -obj + gcc 链接
-            #   适用: 系统有 gcc（如 MinGW）但 vixc 内部链接器不可用
-            code, obj_path = self._compile_to_obj(input_file, vixc_flags, temp_dir)
+            #   vixc 从项目根目录运行（使 import 路径正确解析），.o 输出到 .vix/temp/
+            code, obj_path = self._compile_to_obj(input_file, vixc_flags, root_dir, temp_dir)
             if code != 0:
                 sys.exit(code)
             code = self._link_with_gcc(obj_path, output_name)
             sys.exit(code)
         else:
             # 方案 B: vixc 全权处理编译+链接
-            code = self._compile_direct(input_file, vixc_flags, temp_dir)
+            code = self._compile_direct(input_file, vixc_flags, root_dir)
             sys.exit(code)
