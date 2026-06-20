@@ -2,6 +2,13 @@ from .base import Command
 import argparse
 from .utils import log, parse_pack_name, ask_confirm
 import shutil
+import os
+import stat
+
+
+def _remove_readonly(func, path, exc_info):
+    os.chmod(path, stat.S_IWRITE)
+    func(path)
 
 命令格式说明 = """
 |======================== very del 命令格式说明 ========================|
@@ -50,7 +57,7 @@ class DelCmd(Command):
             return
 
         try:
-            shutil.rmtree(PACK_PATH)
+            shutil.rmtree(PACK_PATH, onexc=_remove_readonly)
             log.success(f"包 [bold]{pack_info.full_name}[/bold] 已删除")
         except Exception as e:
             log.error(f"删除失败: {e}")
