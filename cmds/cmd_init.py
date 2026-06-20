@@ -11,6 +11,7 @@ class InitCmd(Command):
     def set_parser(self, p: argparse._SubParsersAction) -> argparse.ArgumentParser:
         parser = p.add_parser(self.NAME, help="初始化一个新的 Vix 项目")
         parser.add_argument("name", nargs="?", default=None, help="项目名称")
+        parser.add_argument("-d", "--dir", default=None, help="初始化目录（默认使用项目名称）")
         return parser
 
     def execute(self):
@@ -21,10 +22,10 @@ class InitCmd(Command):
             log.error("请提供项目名称")
             return
 
-        project_path = Path(project_name)
+        project_path = Path(getattr(args, "dir", None) or project_name)
 
         if project_path.exists():
-            log.error(f"目录 '{project_name}' 已存在")
+            log.error(f"目录 '{project_path}' 已存在")
             return
 
         try:

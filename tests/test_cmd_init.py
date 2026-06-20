@@ -62,3 +62,25 @@ class TestInitCmd:
         err = _patch_stderr(monkeypatch)
         build_and_run_command(InitCmd, namespace=argparse.Namespace(name="failproj"))
         assert "创建项目失败" in err.getvalue()
+
+    def test_with_custom_dir(self, tmp_path, monkeypatch, capsys):
+        monkeypatch.chdir(tmp_path)
+        target = tmp_path / "custom_location"
+        build_and_run_command(
+            InitCmd, namespace=argparse.Namespace(name="myapp", dir=str(target))
+        )
+        out, _err = capsys.readouterr()
+        assert "成功创建项目" in out
+        assert target.is_dir()
+        assert 'name = "myapp"' in (target / "vindex.toml").read_text("utf-8")
+        assert (target / "main.vix").is_file()
+
+    def test_custom_dir_exists(self, tmp_path, monkeypatch):
+        monkeypatch.chdir(tmp_path)
+        target = tmp_path / "existing_dir"
+        target.mkdir()
+        err = _patch_stderr(monkeypatch)
+        build_and_run_command(
+            InitCmd, namespace=argparse.Namespace(name="myapp", dir=str(target))
+        )
+        assert "目录" in err.getvalue() and "已存在" in err.getvalue()
