@@ -176,10 +176,8 @@ class BuildCmd(Command):
             #   vixc 从项目根目录运行（使 import 路径正确解析），.o 输出到 .vix/temp/
             code, obj_path = self._compile_to_obj(input_file, vixc_flags, root_dir, temp_dir)
             if code != 0:
-                sys.exit(code)
-            code = self._link_with_gcc(obj_path, output_name)
-            sys.exit(code)
+                return code
+            return self._link_with_gcc(obj_path, output_name)
         else:
             # 方案 B: vixc 全权处理编译+链接
-            code = self._compile_direct(input_file, vixc_flags, root_dir)
-            sys.exit(code)
+            return self._compile_direct(input_file, vixc_flags, root_dir)

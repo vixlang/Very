@@ -38,7 +38,7 @@ class TestInstallCmd:
 
     def test_install_single_dep(self, tmp_config, monkeypatch, tmp_path):
         _fix_pack_path_default(monkeypatch, tmp_config["libs_path"])
-        (tmp_path / "vindex.toml").write_text('deps = ["fexcode.vnet"]\n')
+        (tmp_path / "vindex.toml").write_text('[project]\ndeps = ["fexcode.vnet"]\n')
         monkeypatch.chdir(tmp_path)
         monkeypatch.setattr(
             "cmds.cmd_add.Repo.clone_from",
@@ -58,14 +58,14 @@ class TestInstallCmd:
         (pkg / "vindex.toml").write_text(
             '[package]\nname = "vnet"\nversion = "1.0.0"\n'
         )
-        (tmp_path / "vindex.toml").write_text('deps = ["fexcode.vnet"]\n')
+        (tmp_path / "vindex.toml").write_text('[project]\ndeps = ["fexcode.vnet"]\n')
         monkeypatch.chdir(tmp_path)
 
         build_and_run_command(InstallCmd, namespace=argparse.Namespace())
 
     def test_install_clone_failure(self, tmp_config, monkeypatch, tmp_path):
         _fix_pack_path_default(monkeypatch, tmp_config["libs_path"])
-        (tmp_path / "vindex.toml").write_text('deps = ["fexcode.vnet"]\n')
+        (tmp_path / "vindex.toml").write_text('[project]\ndeps = ["fexcode.vnet"]\n')
         monkeypatch.chdir(tmp_path)
         monkeypatch.setattr(
             "cmds.cmd_add.Repo.clone_from",
@@ -79,7 +79,7 @@ class TestInstallCmd:
 
     def test_install_no_vindex(self, tmp_config, monkeypatch, tmp_path):
         _fix_pack_path_default(monkeypatch, tmp_config["libs_path"])
-        (tmp_path / "vindex.toml").write_text('deps = ["fexcode.vnet"]\n')
+        (tmp_path / "vindex.toml").write_text('[project]\ndeps = ["fexcode.vnet"]\n')
         monkeypatch.chdir(tmp_path)
         monkeypatch.setattr(
             "cmds.cmd_add.Repo.clone_from",

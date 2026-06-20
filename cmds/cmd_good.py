@@ -3,7 +3,6 @@
 from .base import Command
 import argparse
 import subprocess
-import sys
 from pathlib import Path
 from .utils import log, console
 
@@ -78,7 +77,7 @@ class GoodCmd(Command):
 
         if not has_error:
             console.print("  [green]✔[/green]  全部通过")
-        sys.exit(1 if has_error else 0)
+        return 1 if has_error else 0
 
 
 命令格式说明 = """

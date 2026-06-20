@@ -82,7 +82,9 @@ class Very:
         cmd.namespace = args
         cmd.extra_args = extra or []
         try:
-            cmd.execute()
+            result = cmd.execute()
+            if result is not None and result != 0:
+                exit(result)
         except VeryFatalError:
             exit(1)
         except KeyboardInterrupt:

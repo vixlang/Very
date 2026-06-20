@@ -60,12 +60,10 @@ class RunCmd(Command):
         build_cmd = BuildCmd.create_for_subcommand(
             self.namespace, extra, silent=not verbose
         )
-        try:
-            build_cmd.execute()
-        except SystemExit as e:
-            if e.code != 0:
-                log.error("编译失败，无法运行")
-                return
+        build_code = build_cmd.execute()
+        if build_code != 0:
+            log.error("编译失败，无法运行")
+            return
 
         if not output_path.exists():
             log.error(f"编译产物 {output_path.name} 未生成")

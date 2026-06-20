@@ -14,9 +14,10 @@ class Command(ABC):
         self.parser = self.set_parser(p)
         # 这里不立即解析参数，参数在 main.py 中统一解析
         self.namespace = None
+        self.extra_args: list[str] = []
 
     @abstractmethod
     def set_parser(self, p: argparse._SubParsersAction) -> argparse.ArgumentParser: ...
 
     @abstractmethod
-    def execute(self): ...
+    def execute(self) -> int | None: ...

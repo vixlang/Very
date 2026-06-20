@@ -1,56 +1,18 @@
 from .base import Command
 import argparse
-from git import Repo, remote
-from .utils import log, VIndexTool, parse_pack_name, ask_confirm, console, create_git_progress, Config
+from git import Repo
+from .utils import log, parse_pack_name, ask_confirm, console, Config
+from .installer import PackageInstaller, GitProgress
 from pathlib import Path
 import shutil
+import os
+import stat
 from rich.panel import Panel
 
 
-class GitProgress(remote.RemoteProgress):
-    def __init__(self, progress, package_name):
-        super().__init__()
-        self.progress = progress
-        self.package_name = package_name
-        self.task_id = None
-        self.current_op = ""
-
-    def _get_operation_name(self, op_code):
-        """获取操作名称（op_code 含 BEGIN/END 标志位，需先屏蔽）"""
-        # OP_MASK 清除 BEGIN(1)/END(2) 标志位，只保留操作阶段值
-        op_map = {
-            remote.RemoteProgress.COUNTING: "统计对象",
-            remote.RemoteProgress.COMPRESSING: "压缩对象",
-            remote.RemoteProgress.WRITING: "写入对象",
-            remote.RemoteProgress.RECEIVING: "接收对象",
-            remote.RemoteProgress.RESOLVING: "解析差异",
-            remote.RemoteProgress.FINDING_SOURCES: "查找源",
-            remote.RemoteProgress.CHECKING_OUT: "检出文件",
-        }
-        return op_map.get(op_code & remote.RemoteProgress.OP_MASK, "处理中")
-
-    def update(self, op_code, cur_count, max_count=None, message=""):
-        if self.task_id is None:
-            # 第一次调用时创建任务
-            op_name = self._get_operation_name(op_code)
-            self.task_id = self.progress.add_task(
-                f"[cyan]克隆 {self.package_name}[/cyan] - {op_name}",
-                total=max_count if max_count and max_count > 0 else None,
-            )
-            self.current_op = op_name
-
-        # 检查操作是否变化
-        new_op = self._get_operation_name(op_code)
-        if new_op != self.current_op:
-            self.current_op = new_op
-            self.progress.update(
-                self.task_id,
-                description=f"[cyan]克隆 {self.package_name}[/cyan] - {new_op}",
-            )
-
-        # 更新进度
-        if max_count and max_count > 0:
-            self.progress.update(self.task_id, total=max_count, completed=cur_count)
+def _remove_readonly(func, path, exc_info):
+    os.chmod(path, stat.S_IWRITE)
+    func(path)
 
 
 class AddCmd(Command):
@@ -83,7 +45,7 @@ class AddCmd(Command):
                 console.print()
                 return
 
-            shutil.rmtree(PACK_PATH)
+            shutil.rmtree(PACK_PATH, onexc=_remove_readonly)
             log.success(f"已删除旧版本的包 {packinfo.full_name}")
             console.print()
 
@@ -92,46 +54,32 @@ class AddCmd(Command):
         if packinfo.branch_name:
             log.info(f"分支: {packinfo.branch_name}")
 
-        with create_git_progress(packinfo.full_name) as progress:
-            git_progress = GitProgress(progress, packinfo.full_name)
-            try:
-                Repo.clone_from(
-                    packinfo.git_url,
-                    PACK_PATH,
-                    branch=packinfo.branch_name,
-                    progress=git_progress,
+        result = PackageInstaller.install_one(packname, parent=parent)
+
+        if not result.success:
+            if result.no_vindex:
+                console.print()
+                console.print(
+                    Panel(
+                        f"[bold yellow]包缺少 vindex.toml: [white]{packinfo.full_name}[/white][/bold yellow]\n\n"
+                        f"[dim]该目录已被下载但缺少必要的 vindex.toml 文件。[/dim]\n\n"
+                        f"[yellow]操作选项:[/yellow]",
+                        title="[bold]⚠ 警告[/bold]",
+                        border_style="yellow",
+                        padding=(1, 2),
+                    )
                 )
-            except Exception as e:
-                # 清理已创建但未完整克隆的目录，防止脏数据残留
-                if PACK_PATH.exists():
-                    shutil.rmtree(PACK_PATH, ignore_errors=True)
-                    log.info(f"已清理不完整的克隆目录: {PACK_PATH}")
+                if ask_confirm("是否删除此不完整的包?", default=True):
+                    shutil.rmtree(PACK_PATH, onexc=_remove_readonly)
+                    log.warning(f"已删除不完整的包 {packinfo.full_name}")
+                else:
+                    log.warning(f"已保留包 {packinfo.full_name}，但它可能无法使用")
+                console.print()
+            else:
                 log.error(
-                    f"下载失败\n\n[white]{str(e)}[/white]\n\n"
+                    f"下载失败\n\n[white]{result.reason}[/white]\n\n"
                     "[yellow]请检查:[/yellow]\n  • 网络连接是否正常\n  • 仓库地址是否正确\n  • 是否有访问权限"
                 )
-                return
-
-        log.info("正在检查包信息...")
-        content = VIndexTool(PACK_PATH).content()
-        if content is None:
-            console.print()
-            console.print(
-                Panel(
-                    f"[bold yellow]包缺少 vindex.toml: [white]{packinfo.full_name}[/white][/bold yellow]\n\n"
-                    f"[dim]该目录已被下载但缺少必要的 vindex.toml 文件。[/dim]\n\n"
-                    f"[yellow]操作选项:[/yellow]",
-                    title="[bold]⚠ 警告[/bold]",
-                    border_style="yellow",
-                    padding=(1, 2),
-                )
-            )
-            if ask_confirm("是否删除此不完整的包?", default=True):
-                shutil.rmtree(PACK_PATH)
-                log.warning(f"已删除不完整的包 {packinfo.full_name}")
-            else:
-                log.warning(f"已保留包 {packinfo.full_name}，但它可能无法使用")
-            console.print()
             return
 
         log.success(f"包 {packinfo.full_name} 添加成功")

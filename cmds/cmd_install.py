@@ -31,7 +31,7 @@ class InstallCmd(Command):
         with open(vindex_toml_path, "rb") as f:
             data = tomllib.load(f)
 
-        deps = data.get("deps", [])
+        deps = data.get("project", {}).get("deps", [])
         if not deps:
             log.info("vindex.toml 中没有声明依赖")
             return
