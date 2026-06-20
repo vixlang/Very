@@ -6,7 +6,8 @@ from itertools import chain, repeat
 from git.remote import RemoteProgress
 from rich.console import Console
 
-from cmds.cmd_add import AddCmd, GitProgress
+from cmds.cmd_add import AddCmd
+from cmds.installer import GitProgress
 from cmds.utils import PackageNameInfo, Config
 
 from .conftest import build_and_run_command
@@ -90,7 +91,7 @@ class TestAddCmd:
     def test_fresh_install(self, tmp_config, monkeypatch):
         _fix_pack_path_default(monkeypatch, tmp_config["libs_path"])
         monkeypatch.setattr(
-            "cmds.cmd_add.Repo.clone_from",
+            "cmds.installer.Repo.clone_from",
             _make_clone_mock(create_vindex=True),
         )
 
@@ -112,7 +113,7 @@ class TestAddCmd:
         old_file.write_text("old")
 
         monkeypatch.setattr(
-            "cmds.cmd_add.Repo.clone_from",
+            "cmds.installer.Repo.clone_from",
             _make_clone_mock(create_vindex=True),
         )
         monkeypatch.setattr(
@@ -153,7 +154,7 @@ class TestAddCmd:
         _fix_pack_path_default(monkeypatch, tmp_config["libs_path"])
         err = _patch_stderr(monkeypatch)
         monkeypatch.setattr(
-            "cmds.cmd_add.Repo.clone_from",
+            "cmds.installer.Repo.clone_from",
             _make_clone_mock(fail=True),
         )
 
@@ -170,7 +171,7 @@ class TestAddCmd:
     def test_no_vindex_delete(self, tmp_config, monkeypatch):
         _fix_pack_path_default(monkeypatch, tmp_config["libs_path"])
         monkeypatch.setattr(
-            "cmds.cmd_add.Repo.clone_from",
+            "cmds.installer.Repo.clone_from",
             _make_clone_mock(create_vindex=False),
         )
         monkeypatch.setattr(
@@ -190,7 +191,7 @@ class TestAddCmd:
     def test_no_vindex_keep(self, tmp_config, monkeypatch):
         _fix_pack_path_default(monkeypatch, tmp_config["libs_path"])
         monkeypatch.setattr(
-            "cmds.cmd_add.Repo.clone_from",
+            "cmds.installer.Repo.clone_from",
             _make_clone_mock(create_vindex=False),
         )
         monkeypatch.setattr(
@@ -215,7 +216,7 @@ class TestAddCmd:
         pkg.mkdir(parents=True, exist_ok=True)
 
         monkeypatch.setattr(
-            "cmds.cmd_add.Repo.clone_from",
+            "cmds.installer.Repo.clone_from",
             _make_clone_mock(create_vindex=False),
         )
         answers = chain([True, True], repeat(True))

@@ -41,13 +41,13 @@ class TestInstallCmd:
         (tmp_path / "vindex.toml").write_text('[project]\ndeps = ["fexcode.vnet"]\n')
         monkeypatch.chdir(tmp_path)
         monkeypatch.setattr(
-            "cmds.cmd_add.Repo.clone_from",
+            "cmds.installer.Repo.clone_from",
             _make_clone_mock(create_vindex=True),
         )
 
         build_and_run_command(InstallCmd, namespace=argparse.Namespace())
 
-        pkg = tmp_config["libs_path"] / "github.com" / "fexcode" / "vnet"
+        pkg = tmp_path / ".vix" / "libs" / "github.com" / "fexcode" / "vnet"
         assert pkg.is_dir()
         assert (pkg / "vindex.toml").is_file()
 
@@ -68,7 +68,7 @@ class TestInstallCmd:
         (tmp_path / "vindex.toml").write_text('[project]\ndeps = ["fexcode.vnet"]\n')
         monkeypatch.chdir(tmp_path)
         monkeypatch.setattr(
-            "cmds.cmd_add.Repo.clone_from",
+            "cmds.installer.Repo.clone_from",
             _make_clone_mock(fail=True),
         )
 
@@ -82,7 +82,7 @@ class TestInstallCmd:
         (tmp_path / "vindex.toml").write_text('[project]\ndeps = ["fexcode.vnet"]\n')
         monkeypatch.chdir(tmp_path)
         monkeypatch.setattr(
-            "cmds.cmd_add.Repo.clone_from",
+            "cmds.installer.Repo.clone_from",
             _make_clone_mock(create_vindex=False),
         )
         monkeypatch.setattr(

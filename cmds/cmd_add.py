@@ -1,8 +1,7 @@
 from .base import Command
 import argparse
-from git import Repo
-from .utils import log, parse_pack_name, ask_confirm, console, Config
-from .installer import PackageInstaller, GitProgress
+from .utils import log, parse_pack_name, ask_confirm, console, Config, add_dep_to_vindex, err_console
+from .installer import PackageInstaller
 from pathlib import Path
 import shutil
 import os
@@ -21,12 +20,50 @@ class AddCmd(Command):
     def execute(self):
         packname = getattr(self.namespace, "package", "unknown")
         global_install = getattr(self.namespace, "global_install", False)
-        parent = Config.VIX_LIBS_PATH if global_install else Path.cwd() / ".vix" / "libs"
+        local_force = getattr(self.namespace, "local_force", False)
+
+        # ── 非全局模式需要 vindex.toml ──
+        if not global_install:
+            vindex_path = Path.cwd() / "vindex.toml"
+            if not vindex_path.exists():
+                err_console.print()
+                err_console.print(
+                    Panel(
+                        "[bold red]未找到 vindex.toml[/bold red]\n\n"
+                        "[yellow]请在项目根目录下运行此命令[/yellow]\n\n"
+                        "[dim]提示: 使用 [white]very init <name>[/white] 初始化项目，\n"
+                        "或使用 [white]very add -g <package>[/white] 进行全局安装[/dim]",
+                        title="[bold red]✘ 错误[/bold red]",
+                        border_style="red",
+                        padding=(1, 2),
+                    )
+                )
+                err_console.print()
+                return
+
+        # ── 决定安装目标 ──
+        if global_install:
+            parent = Config.VIX_LIBS_PATH
+        else:
+            parent = Path.cwd() / ".vix" / "libs"
+
         packinfo = parse_pack_name(packname, parent=parent)
+
+        # ── 默认模式 (非 -g 非 -l): 先查全局 ──
+        if not global_install and not local_force:
+            global_packinfo = parse_pack_name(packname, parent=Config.VIX_LIBS_PATH)
+            if global_packinfo.pack_path.exists():
+                added = add_dep_to_vindex(packname)
+                if added:
+                    log.success(f"已添加 {packinfo.full_name} 到 deps (使用全局副本)")
+                else:
+                    log.info(f"deps 中已存在: {packname}")
+                return
+
         PACK_PATH = packinfo.pack_path
 
+        # ── 检查是否已安装 ──
         if PACK_PATH.exists():
-
             console.print()
             console.print(
                 Panel(
@@ -49,6 +86,7 @@ class AddCmd(Command):
             log.success(f"已删除旧版本的包 {packinfo.full_name}")
             console.print()
 
+        # ── 执行克隆 ──
         log.section(f"添加包: {packinfo.full_name}")
         log.info(f"源: [link={packinfo.git_url}]{packinfo.git_url}[/link]")
         if packinfo.branch_name:
@@ -82,6 +120,12 @@ class AddCmd(Command):
                 )
             return
 
+        # ── 克隆成功 → 添加到 deps ──
+        if not global_install:
+            added = add_dep_to_vindex(packname)
+            if added:
+                log.success(f"已添加 {packname} 到 deps")
+
         log.success(f"包 {packinfo.full_name} 添加成功")
 
     def set_parser(self, p: argparse._SubParsersAction) -> argparse.ArgumentParser:
@@ -97,6 +141,12 @@ class AddCmd(Command):
             dest="global_install",
             action="store_true",
             help="全局安装到 VIX_HOME 目录",
+        )
+        add_parser.add_argument(
+            "-l", "--local",
+            dest="local_force",
+            action="store_true",
+            help="强制在项目 .vix 目录下载（即使全局已存在）",
         )
         return add_parser
 

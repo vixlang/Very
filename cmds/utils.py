@@ -282,6 +282,45 @@ def parse_pack_name(package_name: str, parent: Path | None = None) -> PackageNam
     )
 
 
+def add_dep_to_vindex(pack_spec: str) -> bool:
+    """将包 spec 写入当前项目 vindex.toml 的 deps 数组。
+
+    Returns:
+        True  添加成功
+        False 已存在或 vindex.toml 不存在
+    """
+    vindex_path = Path.cwd() / "vindex.toml"
+    if not vindex_path.exists():
+        return False
+
+    content = vindex_path.read_text(encoding="utf-8")
+
+    import tomllib
+    import io
+
+    data = tomllib.load(io.BytesIO(content.encode("utf-8")))
+    deps: list = data.get("project", {}).get("deps", [])
+    if pack_spec in deps:
+        return False
+
+    new_deps = deps + [pack_spec]
+    items = ", ".join(repr(d) for d in new_deps)
+
+    new_content = re.sub(
+        r"^deps\s*=\s*\[[\s\S]*?\]",
+        f"deps = [{items}]",
+        content,
+        count=1,
+        flags=re.MULTILINE,
+    )
+
+    if new_content == content:
+        return False
+
+    vindex_path.write_text(new_content, encoding="utf-8")
+    return True
+
+
 log = Logger()
 
 
