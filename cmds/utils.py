@@ -174,7 +174,9 @@ class PackageNameInfo:
         return f"{self.git_master}:{self.user_name}.{self.repo_name}"
 
 
-def parse_pack_name(package_name: str, parent: Path | None = None, bare_prefix: str = VLIB_PREFIX) -> PackageNameInfo:
+def parse_pack_name(
+    package_name: str, parent: Path | None = None, bare_prefix: str = VLIB_PREFIX
+) -> PackageNameInfo:
     original = package_name
     branch = None
     default_host = DEFAULT_HOST

@@ -2,11 +2,10 @@
 
 from .base import Command
 from .cmd_tool import install_tool
-from .utils import Config, log, parse_tool_name
+from .utils import Config, log
 import argparse
 import sys
 import subprocess
-from pathlib import Path
 
 
 class ExeCmd(Command):
@@ -33,9 +32,7 @@ class ExeCmd(Command):
         binary_path = Config.VIX_TOOLS_PATH / f"{tool_name}{suffix}"
 
         if not binary_path.exists():
-            log.info(
-                f"工具 [cyan]{tool_name}[/cyan] 未安装，正在自动安装..."
-            )
+            log.info(f"工具 [cyan]{tool_name}[/cyan] 未安装，正在自动安装...")
             result = install_tool(tool_name)
             if result is None:
                 log.error(f"无法安装工具 {tool_name}")

@@ -1,7 +1,6 @@
 """Tests for ExeCmd."""
 
 import argparse
-from pathlib import Path
 from unittest.mock import MagicMock
 
 from cmds.cmd_exe import ExeCmd
@@ -26,6 +25,7 @@ class TestExeCmd:
             return tool_bin
 
         import cmds.cmd_exe as exe_mod
+
         monkeypatch.setattr(exe_mod, "install_tool", fake_install)
 
         mock_run = MagicMock()

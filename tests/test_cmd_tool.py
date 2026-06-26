@@ -5,7 +5,7 @@ import json
 import time
 from unittest.mock import MagicMock
 
-from cmds.cmd_tool import ToolCmd, install_tool
+from cmds.cmd_tool import ToolCmd
 
 
 class TestToolSearchSubcommand:
@@ -120,6 +120,7 @@ class TestToolSearchSubcommand:
             resp.read.return_value = json.dumps(data).encode("utf-8")
             resp.__enter__.return_value = resp
             return resp
+
         return mock_urlopen
 
     def test_fetch_filters_vtool_only(self, tmp_path, monkeypatch):
@@ -198,7 +199,9 @@ class TestToolSearchSubcommand:
         cmd = self._make_cmd(tmp_path)
         cmd.CACHE_DIR.mkdir(parents=True, exist_ok=True)
         with open(cmd.CACHE_FILE, "w") as f:
-            json.dump({"timestamp": time.time(), "packages": [{"name": "vtool-test"}]}, f)
+            json.dump(
+                {"timestamp": time.time(), "packages": [{"name": "vtool-test"}]}, f
+            )
         cmd._show_cache_status()
         out, _ = capsys.readouterr()
         assert "有效" in out
@@ -236,7 +239,9 @@ class TestToolSearchSubcommand:
         cmd = self._make_cmd(tmp_path)
         cmd.CACHE_DIR.mkdir(parents=True, exist_ok=True)
         with open(cmd.CACHE_FILE, "w") as f:
-            json.dump({"timestamp": time.time(), "packages": [{"name": "vtool-test"}]}, f)
+            json.dump(
+                {"timestamp": time.time(), "packages": [{"name": "vtool-test"}]}, f
+            )
         ns = argparse.Namespace(
             tool_subcommand="__unused",
             package="",

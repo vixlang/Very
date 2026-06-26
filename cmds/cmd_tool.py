@@ -124,8 +124,12 @@ class ToolCmd(Command):
             "keyword", nargs="?", default="", help="搜索关键词（可选）"
         )
         search_parser.add_argument("--no-cache", action="store_true", help="不使用缓存")
-        search_parser.add_argument("--clear-cache", action="store_true", help="清理缓存")
-        search_parser.add_argument("--cache-status", action="store_true", help="查看缓存状态")
+        search_parser.add_argument(
+            "--clear-cache", action="store_true", help="清理缓存"
+        )
+        search_parser.add_argument(
+            "--cache-status", action="store_true", help="查看缓存状态"
+        )
         search_parser.add_argument(
             "--sort",
             choices=["stars", "updated", "name"],
@@ -144,7 +148,9 @@ class ToolCmd(Command):
         elif sub == "search":
             self._cmd_search()
         else:
-            err_console.print("[red]未知 tool 子命令，使用 'very tool --help' 查看帮助[/red]")
+            err_console.print(
+                "[red]未知 tool 子命令，使用 'very tool --help' 查看帮助[/red]"
+            )
 
     def _cmd_add(self):
         packname = getattr(self.namespace, "package", "")
@@ -239,14 +245,10 @@ class ToolCmd(Command):
                 if e.code == 403:
                     if attempt < self.MAX_RETRIES:
                         wait_time = self.RETRY_DELAY * (2 ** (attempt - 1))
-                        log.warning(
-                            f"GitHub API 速率限制，{wait_time} 秒后重试..."
-                        )
+                        log.warning(f"GitHub API 速率限制，{wait_time} 秒后重试...")
                         time.sleep(wait_time)
                         continue
-                    raise Exception(
-                        "GitHub API 速率限制已用完，请稍后再试"
-                    )
+                    raise Exception("GitHub API 速率限制已用完，请稍后再试")
                 elif e.code == 404:
                     raise Exception("GitHub API 端点不存在")
                 elif e.code >= 500:
@@ -384,7 +386,9 @@ class ToolCmd(Command):
     def _show_cache_status(self):
         log.section("缓存状态")
         if not self.CACHE_FILE.exists():
-            log.info("缓存文件不存在\n运行 [green]very tool search[/green] 将自动创建缓存")
+            log.info(
+                "缓存文件不存在\n运行 [green]very tool search[/green] 将自动创建缓存"
+            )
             return
         try:
             with open(self.CACHE_FILE, "r", encoding="utf-8") as f:
@@ -398,9 +402,7 @@ class ToolCmd(Command):
                 status = f"[green]有效[/green]（剩余 {int(remaining_time / 60)} 分钟）"
             else:
                 status = "[red]已过期[/red]"
-            cache_time = time.strftime(
-                "%Y-%m-%d %H:%M:%S", time.localtime(timestamp)
-            )
+            cache_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(timestamp))
             console.print()
             console.print(f"缓存文件: [cyan]{self.CACHE_FILE}[/cyan]")
             console.print(f"创建时间: [white]{cache_time}[/white]")

@@ -1,6 +1,6 @@
 from .base import Command
 import argparse
-from .utils import Config, log, console, iter_package_dirs, iter_empty_dirs, parse_pack_name, build_dep_tree
+from .utils import Config, log, console, iter_package_dirs, iter_empty_dirs, build_dep_tree
 from rich.panel import Panel
 from rich.table import Table
 import shutil
