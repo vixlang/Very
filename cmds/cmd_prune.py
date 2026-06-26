@@ -4,7 +4,14 @@ from .utils import Config, log, console, iter_package_dirs, iter_empty_dirs, par
 from rich.panel import Panel
 from rich.table import Table
 import shutil
+import os
+import stat
 from pathlib import Path
+
+
+def _remove_readonly(func, path, exc_info):
+    os.chmod(path, stat.S_IWRITE)
+    func(path)
 
 
 class PruneCmd(Command):
@@ -34,7 +41,7 @@ class PruneCmd(Command):
                 if not vindex_file.exists():
                     removed_packages.append(package_name)
                     log.warning(f"无效包: [bold]{package_name}[/bold]")
-                    shutil.rmtree(repo_dir)
+                    shutil.rmtree(repo_dir, onexc=_remove_readonly)
 
         if not invalid_only:
             for empty_dir in iter_empty_dirs(libs_path):
@@ -75,7 +82,7 @@ class PruneCmd(Command):
             if ask_confirm("是否删除这些孤立包?", default=False):
                 for _, _, repo_dir, full_name in iter_package_dirs(libs_path):
                     if full_name in unused:
-                        shutil.rmtree(repo_dir)
+                        shutil.rmtree(repo_dir, onexc=_remove_readonly)
                         log.success(f"已删除孤立包: {full_name}")
                 return unused
         else:
