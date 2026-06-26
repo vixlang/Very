@@ -66,5 +66,5 @@ PyPI index defaults to Tsinghua mirror (commented out in `pyproject.toml`; uncom
 ## Workflow
 
 - 任何修改都要及时 git 提交
-- **任何代码/功能修改后必须更新版本号 (pyproject.toml)**
+- ⚠️ **任何代码/功能修改后一定一定一定要更新版本号 (pyproject.toml)** ⚠️
 - 对于探索类型任务, 拆分模块发动多个 subagent 并发探索, 不要只用单个 agent
