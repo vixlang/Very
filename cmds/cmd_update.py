@@ -2,6 +2,7 @@ from .base import Command
 import argparse
 from pathlib import Path
 from .utils import log, parse_pack_name, Config, iter_package_dirs
+from .installer import PackageInstaller
 from git import Repo
 
 
@@ -75,3 +76,10 @@ class UpdateCmd(Command):
                     dep_info = parse_pack_name(dep_spec, parent=libs_parent)
                     if dep_info.pack_path.exists():
                         self._update_one(dep_spec, dep_info.pack_path, libs_parent, visited)
+                    else:
+                        log.info(f"    ⊳ {dep_spec} [cyan]尚未安装, 正在安装...[/cyan]")
+                        result = PackageInstaller.install_one(dep_spec, parent=libs_parent)
+                        if result.success:
+                            log.success(f"    ✔ {dep_spec}")
+                            dep_path = parse_pack_name(dep_spec, parent=libs_parent).pack_path
+                            self._update_one(dep_spec, dep_path, libs_parent, visited)
