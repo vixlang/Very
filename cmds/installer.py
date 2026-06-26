@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from git import Repo, remote
 import shutil
-from .utils import VIndexTool, parse_pack_name, create_git_progress
+from .utils import VIndexTool, parse_pack_name, create_git_progress, log
 
 
 class GitProgress(remote.RemoteProgress):
@@ -107,6 +107,12 @@ class PackageInstaller:
         if content is None:
             return InstallResult(
                 spec=spec, success=False, reason="缺少 vindex.toml", no_vindex=True
+            )
+
+        # 检查 main.vix（第三方库必须提供）
+        if not (pack_path / "main.vix").exists():
+            log.warning(
+                f"{packinfo.full_name} 缺少 main.vix 入口文件，vix 编译器可能无法识别"
             )
 
         return InstallResult(spec=spec, success=True)

@@ -24,10 +24,9 @@ from .utils import log, console
 class BuildCmd(Command):
     NAME = "build"
     silent: bool = False
-    allow_entrypoint: bool = False
 
     @classmethod
-    def create_for_subcommand(cls, namespace, extra_args: list[str], silent: bool = False, allow_entrypoint: bool = False) -> "BuildCmd":
+    def create_for_subcommand(cls, namespace, extra_args: list[str], silent: bool = False) -> "BuildCmd":
         """Create a BuildCmd instance for use by other commands (e.g., RunCmd).
 
         This avoids bypassing __init__ with __new__.
@@ -37,7 +36,6 @@ class BuildCmd(Command):
         instance.namespace = namespace
         instance.extra_args = extra_args
         instance.silent = silent
-        instance.allow_entrypoint = allow_entrypoint
         return instance
 
     def set_parser(self, p: argparse._SubParsersAction) -> argparse.ArgumentParser:
@@ -158,15 +156,11 @@ class BuildCmd(Command):
         # —— 4. 提取 .vix 输入文件 ——
         input_file, vixc_flags = self._extract_input_file(args_list)
         if input_file is None:
-            # 只有 vtool 包允许使用 project.entrypoint；普通项目统一用 main.vix
-            if self.allow_entrypoint:
-                try:
-                    with open("vindex.toml", "rb") as f:
-                        vindex_data = tomllib.load(f)
-                    entrypoint = vindex_data.get("project", {}).get("entrypoint", "main.vix")
-                except Exception:
-                    entrypoint = "main.vix"
-            else:
+            try:
+                with open("vindex.toml", "rb") as f:
+                    vindex_data = tomllib.load(f)
+                entrypoint = vindex_data.get("project", {}).get("entrypoint", "main.vix")
+            except Exception:
                 entrypoint = "main.vix"
             candidate = Path(entrypoint).resolve()
             if not candidate.exists():
