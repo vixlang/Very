@@ -285,6 +285,8 @@ def parse_pack_name(package_name: str, parent: Path | None = None) -> PackageNam
 def add_dep_to_vindex(pack_spec: str) -> bool:
     """将包 spec 写入当前项目 vindex.toml 的 deps 数组。
 
+    兼容已弃用的 [dependencies] 表格——读取其中的项并迁移到 deps = []。
+
     Returns:
         True  添加成功
         False 已存在或 vindex.toml 不存在
@@ -293,31 +295,27 @@ def add_dep_to_vindex(pack_spec: str) -> bool:
     if not vindex_path.exists():
         return False
 
-    content = vindex_path.read_text(encoding="utf-8")
-
     import tomllib
-    import io
+    import tomli_w
 
-    data = tomllib.load(io.BytesIO(content.encode("utf-8")))
+    with open(vindex_path, "rb") as f:
+        data = tomllib.load(f)
+
     deps: list = data.get("project", {}).get("deps", [])
-    if pack_spec in deps:
+    if not isinstance(deps, list):
+        deps = []
+    legacy = list(data.get("dependencies", {}).keys())
+    existing = list(dict.fromkeys(deps + legacy))
+
+    if pack_spec in existing:
         return False
 
-    new_deps = deps + [pack_spec]
-    items = ", ".join(repr(d) for d in new_deps)
+    data.setdefault("project", {})["deps"] = existing + [pack_spec]
+    data.pop("dependencies", None)
 
-    new_content = re.sub(
-        r"^deps\s*=\s*\[[\s\S]*?\]",
-        f"deps = [{items}]",
-        content,
-        count=1,
-        flags=re.MULTILINE,
-    )
+    with open(vindex_path, "wb") as f:
+        tomli_w.dump(data, f)
 
-    if new_content == content:
-        return False
-
-    vindex_path.write_text(new_content, encoding="utf-8")
     return True
 
 

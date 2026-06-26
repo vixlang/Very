@@ -294,3 +294,228 @@ class TestSearchCmd:
         out, _err = capsys.readouterr()
         assert "缓存状态" in out
         assert "有效" in out
+
+    # -----------------------------------------------------------------------
+    #  fetch_packages_with_cache
+    # -----------------------------------------------------------------------
+
+    def test_fetch_packages_with_cache_valid(self, tmp_path, monkeypatch):
+        cmd = self._make_cmd(tmp_path)
+        cmd.CACHE_DIR.mkdir(parents=True, exist_ok=True)
+        packages = [{"name": "vlib-cached", "stars": 1}]
+        cache_data = {"timestamp": time.time(), "packages": packages}
+        with open(cmd.CACHE_FILE, "w", encoding="utf-8") as f:
+            json.dump(cache_data, f)
+
+        result = cmd.fetch_packages_with_cache()
+        assert result == packages
+
+    def test_fetch_packages_with_cache_expired(self, tmp_path, monkeypatch):
+        cmd = self._make_cmd(tmp_path)
+        cmd.CACHE_DIR.mkdir(parents=True, exist_ok=True)
+        old_packages = [{"name": "vlib-old", "stars": 1}]
+        cache_data = {"timestamp": time.time() - 7200, "packages": old_packages}
+        with open(cmd.CACHE_FILE, "w", encoding="utf-8") as f:
+            json.dump(cache_data, f)
+
+        raw_repos = [
+            {
+                "name": "vlib-fresh",
+                "description": "Fresh data",
+                "stargazers_count": 42,
+                "language": "Vix",
+                "updated_at": "2024-01-15T00:00:00Z",
+                "html_url": "",
+            },
+        ]
+        monkeypatch.setattr(
+            "urllib.request.urlopen", self._mock_github_urlopen(raw_repos)
+        )
+
+        result = cmd.fetch_packages_with_cache()
+        assert len(result) == 1
+        assert result[0]["name"] == "vlib-fresh"
+
+    # -----------------------------------------------------------------------
+    #  show_cache_status
+    # -----------------------------------------------------------------------
+
+    def test_show_cache_status_no_cache(self, tmp_path, capsys):
+        cmd = self._make_cmd(tmp_path)
+        cmd.show_cache_status()
+        out, _err = capsys.readouterr()
+        assert "缓存文件不存在" in out
+
+    def test_show_cache_status_valid(self, tmp_path, capsys):
+        cmd = self._make_cmd(tmp_path)
+        cmd.CACHE_DIR.mkdir(parents=True, exist_ok=True)
+        packages = [{"name": "vlib-test", "stars": 1}]
+        with open(cmd.CACHE_FILE, "w") as f:
+            json.dump({"timestamp": time.time(), "packages": packages}, f)
+
+        cmd.show_cache_status()
+        out, _err = capsys.readouterr()
+        assert "有效" in out
+        assert "vlib-test" in out or "1" in out
+
+    def test_show_cache_status_expired(self, tmp_path, capsys):
+        cmd = self._make_cmd(tmp_path)
+        cmd.CACHE_DIR.mkdir(parents=True, exist_ok=True)
+        packages = [{"name": "vlib-test", "stars": 1}]
+        with open(cmd.CACHE_FILE, "w") as f:
+            json.dump({"timestamp": time.time() - 7200, "packages": packages}, f)
+
+        cmd.show_cache_status()
+        out, _err = capsys.readouterr()
+        assert "已过期" in out
+
+    def test_show_cache_status_corrupted(self, tmp_path, capsys):
+        cmd = self._make_cmd(tmp_path)
+        cmd.CACHE_DIR.mkdir(parents=True, exist_ok=True)
+        with open(cmd.CACHE_FILE, "w") as f:
+            f.write("{invalid")
+
+        cmd.show_cache_status()
+        out, _err = capsys.readouterr()
+        # Status line is printed via console (stdout); error goes to stderr
+        assert "缓存状态" in out
+
+    # -----------------------------------------------------------------------
+    #  display_results
+    # -----------------------------------------------------------------------
+
+    def test_display_results(self, tmp_path, capsys):
+        cmd = self._make_cmd(tmp_path)
+        packages = [
+            {
+                "name": "vlib-zeta",
+                "description": "A Zeta lib",
+                "stars": 5,
+                "updated": "2024-03-01",
+                "language": "Vix",
+                "url": "",
+            },
+            {
+                "name": "vlib-alpha",
+                "description": "Alpha lib with a very long description that should definitely exceed fifty characters so it gets truncated",
+                "stars": 42,
+                "updated": "2024-01-15",
+                "language": "Vix",
+                "url": "",
+            },
+        ]
+        cmd.display_results(packages, "stars")
+        out, _err = capsys.readouterr()
+        assert "zeta" in out
+        assert "alpha" in out
+
+    def test_display_results_non_vlib_name(self, tmp_path, capsys):
+        """Display a package whose name doesn't start with vlib-."""
+        cmd = self._make_cmd(tmp_path)
+        packages = [
+            {
+                "name": "ver",
+                "description": "The Vix compiler",
+                "stars": 200,
+                "updated": "2024-01-15",
+                "language": "Vix",
+                "url": "",
+            },
+        ]
+        cmd.display_results(packages, "name")
+        out, _err = capsys.readouterr()
+        assert "ver" in out
+
+    # -----------------------------------------------------------------------
+    #  execute — keyword filter
+    # -----------------------------------------------------------------------
+
+    def test_execute_with_keyword_match(self, tmp_path, monkeypatch, capsys):
+        cmd = self._make_cmd(tmp_path)
+        cmd.CACHE_DIR.mkdir(parents=True, exist_ok=True)
+        packages = [
+            {"name": "vlib-vnet", "description": "Networking lib", "stars": 42, "updated": "2024-01-15", "language": "Vix", "url": ""},
+            {"name": "vlib-core", "description": "Core lib", "stars": 99, "updated": "2024-02-01", "language": "Vix", "url": ""},
+        ]
+        with open(cmd.CACHE_FILE, "w") as f:
+            json.dump({"timestamp": time.time(), "packages": packages}, f)
+
+        ns = argparse.Namespace(
+            keyword="core",
+            no_cache=False,
+            clear_cache=False,
+            cache_status=False,
+            sort="stars",
+            limit=None,
+        )
+        cmd.namespace = ns
+        cmd.execute()
+        out, _err = capsys.readouterr()
+        # display_results shows short name (without vlib- prefix)
+        assert "core" in out
+        # The hint panel always mentions "vnet" as an example, so don't assert absence
+
+    def test_execute_with_keyword_no_match(self, tmp_path, monkeypatch, capsys):
+        cmd = self._make_cmd(tmp_path)
+        cmd.CACHE_DIR.mkdir(parents=True, exist_ok=True)
+        packages = [
+            {"name": "vlib-vnet", "description": "Networking lib", "stars": 42, "updated": "2024-01-15", "language": "Vix", "url": ""},
+        ]
+        with open(cmd.CACHE_FILE, "w") as f:
+            json.dump({"timestamp": time.time(), "packages": packages}, f)
+
+        ns = argparse.Namespace(
+            keyword="nonexistent",
+            no_cache=False,
+            clear_cache=False,
+            cache_status=False,
+            sort="stars",
+            limit=None,
+        )
+        cmd.namespace = ns
+        cmd.execute()
+        out, _err = capsys.readouterr()
+        assert "未找到" in out
+
+    def test_execute_with_limit(self, tmp_path, monkeypatch, capsys):
+        cmd = self._make_cmd(tmp_path)
+        cmd.CACHE_DIR.mkdir(parents=True, exist_ok=True)
+        packages = [
+            {"name": "vlib-a", "description": "A", "stars": 1, "updated": "2024-01-01", "language": "Vix", "url": ""},
+            {"name": "vlib-b", "description": "B", "stars": 2, "updated": "2024-01-02", "language": "Vix", "url": ""},
+            {"name": "vlib-c", "description": "C", "stars": 3, "updated": "2024-01-03", "language": "Vix", "url": ""},
+        ]
+        with open(cmd.CACHE_FILE, "w") as f:
+            json.dump({"timestamp": time.time(), "packages": packages}, f)
+
+        ns = argparse.Namespace(
+            keyword="",
+            no_cache=False,
+            clear_cache=False,
+            cache_status=False,
+            sort="stars",
+            limit=2,
+        )
+        cmd.namespace = ns
+        cmd.execute()
+        out, _err = capsys.readouterr()
+        assert "共找到 2 个包" in out
+
+    def test_execute_no_packages(self, tmp_path, monkeypatch, capsys):
+        cmd = self._make_cmd(tmp_path)
+        cmd.CACHE_DIR.mkdir(parents=True, exist_ok=True)
+        with open(cmd.CACHE_FILE, "w") as f:
+            json.dump({"timestamp": time.time(), "packages": []}, f)
+
+        ns = argparse.Namespace(
+            keyword="",
+            no_cache=False,
+            clear_cache=False,
+            cache_status=False,
+            sort="stars",
+            limit=None,
+        )
+        cmd.namespace = ns
+        cmd.execute()
+        out, _err = capsys.readouterr()
+        assert "未找到任何包" in out

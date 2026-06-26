@@ -16,6 +16,7 @@ dependencies = [
     "gitpython>=3.1.46",
     "rich>=15.0.0",
     "tqdm>=4.67.3",
+    "tomli-w>=1.2.0",
 ]
 
 [[tool.uv.index]]

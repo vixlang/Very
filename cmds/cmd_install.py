@@ -40,7 +40,9 @@ class InstallCmd(Command):
             data = tomllib.load(f)
 
         deps = data.get("project", {}).get("deps", [])
-        if not deps:
+        legacy_deps = list(data.get("dependencies", {}).keys())
+        all_deps = list(dict.fromkeys(deps + legacy_deps))
+        if not all_deps:
             log.info("vindex.toml 中没有声明依赖")
             return
 
@@ -52,7 +54,7 @@ class InstallCmd(Command):
         global_skipped = []
         failed = []
 
-        for spec in deps:
+        for spec in all_deps:
             # ── 先查本地 ──
             local_packinfo = parse_pack_name(spec, parent=local_parent)
             if local_packinfo.pack_path.exists():

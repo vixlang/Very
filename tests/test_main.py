@@ -179,3 +179,33 @@ class TestMainFunctions:
         with pytest.raises(SystemExit) as exc:
             main()
         assert exc.value.code == 1
+
+    # -----------------------------------------------------------------------
+    #  main() — parse_known_args SystemExit with non-zero code
+    # -----------------------------------------------------------------------
+
+    def test_main_parse_error(self, monkeypatch):
+        monkeypatch.setattr(sys, "argv", ["very", "--unknown-flag"])
+        with pytest.raises(SystemExit) as exc:
+            main()
+        assert exc.value.code != 0
+
+    # -----------------------------------------------------------------------
+    #  main() — unknown subcommand via Very.run
+    # -----------------------------------------------------------------------
+
+    def test_main_unknown_subcommand(self, monkeypatch):
+        monkeypatch.setattr(sys, "argv", ["very", "nonexistent"])
+        with pytest.raises(SystemExit) as exc:
+            main()
+        # argparse itself exits with 2 for invalid choices
+        assert exc.value.code == 2
+
+    # -----------------------------------------------------------------------
+    #  show_version outputs valid text
+    # -----------------------------------------------------------------------
+
+    def test_show_version_contains_version_string(self, capsys):
+        show_version()
+        out, _err = capsys.readouterr()
+        assert "v" in out and "Very" in out
