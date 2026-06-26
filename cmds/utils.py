@@ -73,6 +73,7 @@ def ask_confirm(prompt: str, default: bool = False) -> bool:
 class Config:
     VIX_HOME: Path = Path(os.getenv("VIX_HOME", "./.vix"))
     VIX_LIBS_PATH: Path = Path(os.getenv("VIX_HOME", "./.vix")) / "libs"
+    VIX_TOOLS_PATH: Path = Path(os.getenv("VIX_HOME", "./.vix")) / "tools"
 
     @staticmethod
     def local_libs_path() -> Path:
@@ -84,6 +85,7 @@ class Config:
 DEFAULT_HOST = "github.com"
 DEFAULT_ORG = "vixlang"
 VLIB_PREFIX = "vlib-"
+VTOOL_PREFIX = "vtool-"
 
 
 def iter_package_dirs(libs_path: Path) -> Iterator[tuple[Path, Path, Path, str]]:
@@ -172,7 +174,7 @@ class PackageNameInfo:
         return f"{self.git_master}:{self.user_name}.{self.repo_name}"
 
 
-def parse_pack_name(package_name: str, parent: Path | None = None) -> PackageNameInfo:
+def parse_pack_name(package_name: str, parent: Path | None = None, bare_prefix: str = VLIB_PREFIX) -> PackageNameInfo:
     original = package_name
     branch = None
     default_host = DEFAULT_HOST
@@ -276,7 +278,7 @@ def parse_pack_name(package_name: str, parent: Path | None = None) -> PackageNam
             raise ValueError(f"包名格式错误: {original}")
     else:
         user_name = DEFAULT_ORG
-        repo_name = f"{VLIB_PREFIX}{package_name}"
+        repo_name = f"{bare_prefix}{package_name}"
 
     return PackageNameInfo(
         git_master=default_host,
@@ -285,6 +287,11 @@ def parse_pack_name(package_name: str, parent: Path | None = None) -> PackageNam
         branch_name=branch,
         parent=parent,
     )
+
+
+def parse_tool_name(package_name: str, parent: Path | None = None) -> PackageNameInfo:
+    """Same as parse_pack_name but bare names use vtool- prefix."""
+    return parse_pack_name(package_name, parent=parent, bare_prefix=VTOOL_PREFIX)
 
 
 def build_dep_tree(libs_path: Path, root_deps: list[str]) -> set[str]:

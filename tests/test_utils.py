@@ -13,6 +13,7 @@ from cmds.utils import (
     iter_empty_dirs,
     iter_package_dirs,
     parse_pack_name,
+    parse_tool_name,
 )
 
 
@@ -29,6 +30,10 @@ class TestConfig:
     def test_libs_path_is_home_libs(self):
         assert Config.VIX_LIBS_PATH.name == "libs"
         assert Config.VIX_LIBS_PATH.parent == Config.VIX_HOME
+
+    def test_tools_path_is_home_tools(self):
+        assert Config.VIX_TOOLS_PATH.name == "tools"
+        assert Config.VIX_TOOLS_PATH.parent == Config.VIX_HOME
 
 
 class TestLogger:
@@ -122,6 +127,18 @@ class TestParsePackName:
         assert info.user_name == "vixlang"
         assert info.repo_name == "vlib-myproject"
         assert info.branch_name is None
+
+    def test_tool_bare_name(self):
+        info = parse_tool_name("game")
+        assert info.git_master == "github.com"
+        assert info.user_name == "vixlang"
+        assert info.repo_name == "vtool-game"
+
+    def test_tool_dot_format(self):
+        """Dot format names are not affected by vtool- prefix."""
+        info = parse_tool_name("fexcode.vnet")
+        assert info.repo_name == "vnet"
+        assert info.user_name == "fexcode"
 
 
 class TestPackageNameInfo:
