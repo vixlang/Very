@@ -23,7 +23,7 @@ very <命令> --help     # 查看具体命令的详细信息
 > 地址： https://github.com/vixlang
 
 ### 规范
-官方仓库的标准库项目名以`vlib-`开头
+官方仓库的标准库项目名以`vlib-`开头，工具项目名以`vtool-`开头
 
 
 ## 包索引格式
@@ -163,6 +163,65 @@ very search --limit 5          # 只显示前 5 个
 very search --no-cache         # 强制刷新缓存
 very search --cache-status     # 查看缓存状态
 very search --clear-cache      # 清理缓存
+```
+
+### very tool add - 安装 Vix 工具
+
+`very tool add` 命令用于安装 Vix 工具。包名展开规则与 `very add` 相同，但 bare name 使用 `vtool-` 前缀而非 `vlib-`。
+
+#### 格式
+```bash
+very tool add <工具包名>
+```
+
+#### 示例
+```bash
+very tool add game           # 安装 github.com/vixlang/vtool-game
+very tool add fexcode.vtool  # 安装 github.com/fexcode/vtool
+```
+
+#### 工作流程
+1. 解析包名（bare name → `vtool-` 前缀）
+2. 克隆到 `$VIX_HOME/tools/{host}/{user}/{repo}/`
+3. 读取 `vindex.toml` 获取 `project.name`
+4. 编译，输出到 `$VIX_HOME/tools/{name}.exe`
+
+### very tool search - 搜索 Vix 工具
+
+`very tool search` 命令用于从 GitHub vixlang 组织搜索可用的 Vix 工具（`vtool-*` 仓库）。
+
+#### 格式
+```bash
+very tool search [关键词] [选项]
+```
+
+#### 选项
+- `--sort stars|updated|name`: 排序方式（默认按星标数）
+- `--limit N`: 限制显示的工具数量
+- `--no-cache`: 不使用缓存
+- `--clear-cache`: 清理缓存
+- `--cache-status`: 查看缓存状态
+
+#### 示例
+```bash
+very tool search                    # 列出所有工具
+very tool search game               # 搜索工具名包含 game 的
+very tool search --sort updated     # 按更新时间排序
+```
+
+### very exe - 执行 Vix 工具
+
+`very exe` 命令用于查找并执行已编译的 Vix 工具。如果工具未安装，会自动执行 `very tool add`。
+
+#### 格式
+```bash
+very exe <工具名> [参数...]
+```
+
+#### 示例
+```bash
+very exe game                    # 运行 game 工具
+very exe game --score=100        # 带参数运行
 ```
 
 ---

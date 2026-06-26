@@ -6,7 +6,7 @@ Vix language project management & build tool. CLI name: `very`.
 
 - **Python** >=3.13, **uv**-managed, setuptools build
 - Entrypoint: `main.py` → `main:main` (installed as `very` via `pyproject.toml` `[project.scripts]`)
-- Commands: `add`, `del`, `list`, `prune`, `init`, `search`, `install`, `update`, `run` — registered in `cmds/__init__.py`, all extend `Command` from `cmds/base.py`
+- Commands: `add`, `del`, `list`, `prune`, `init`, `search`, `install`, `update`, `run`, `exe`, `tool` — registered in `cmds/__init__.py`, all extend `Command` from `cmds/base.py`
 
 ## Commands
 
@@ -22,6 +22,9 @@ very build [vixc options...]         # compile main.vix; if gcc is available, us
 very run [-k|--keep] [vixc options...] # build + run + cleanup (keep with -k)
 very install                         # install deps from vindex.toml
 very update [<package>]              # git pull package(s)
+very tool add <package>              # clone + compile a vix tool into $VIX_HOME/tools/
+very tool search [keyword] [options] # search vix tools (vtool-* repos on github.com/vixlang)
+very exe <tool> [args...]            # find and run a compiled tool (auto-installs if missing)
 ```
 
 ## Package naming (`cmds/utils.py:161`)
@@ -44,19 +47,21 @@ ruff check .       # linter (dev dep)
 black .            # formatter (dev dep)
 ```
 
-Test framework: `pytest` (dev dep). Run: `uv run pytest tests/` (110 tests, all passing).
+Test framework: `pytest` (dev dep). Run: `uv run pytest tests/` (212 tests, all passing).
 
 ## Config & paths
 
 - `VIX_HOME` env var overrides default `.vix/` (gitignored)
 - `very add` installs locally (`.vix/libs/`) by default; use `-g` for `$VIX_HOME/libs/`
+- `very tool add` installs tools to `$VIX_HOME/tools/` (cloned source) with compiled binaries at `$VIX_HOME/tools/<name>.exe`
 - Installed packages: `$VIX_HOME/libs/{host}/{user}/{repo}/`
 - Package validity: must contain `vindex.toml`
 - Search cache: `$VIX_HOME/cache/search_cache.json` (1 h expiry)
+- Tool search cache: `$VIX_HOME/tools/cache/tool_search_cache.json` (1 h expiry)
 
 ## Dependencies
 
-- Runtime: `gitpython`, `rich`, `tqdm`
+- Runtime: `gitpython`, `rich`, `tqdm`, `tomli-w`
 - Dev: `ruff`, `black`
 
 PyPI index defaults to Tsinghua mirror (commented out in `pyproject.toml`; uncomment `[[tool.uv.index]]` to enable).
