@@ -17,8 +17,8 @@ very del <package>                   # rm -rf from .vix/libs/
 very list [-t|--tree]                # list installed packages
 very prune [--empty-only | --invalid-only]
 very init <name>                     # scaffold new vix project
-very search [keyword] [--sort stars|updated|name] [--limit N] [--no-cache] [--clear-cache] [--cache-status]
-very build [vixc options...]         # compile main.vix; if gcc is available, use vixc -obj + gcc link, else direct vixc
+very search [keyword] [options]      # search packages from github.com/vixlang
+very build [vixc options...]         # compile main.vix
 very run [-k|--keep] [vixc options...] # build + run + cleanup (keep with -k)
 very install                         # install deps from vindex.toml
 very update [<package>]              # git pull package(s)
