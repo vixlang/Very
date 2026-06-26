@@ -156,10 +156,16 @@ class BuildCmd(Command):
         # —— 4. 提取 .vix 输入文件 ——
         input_file, vixc_flags = self._extract_input_file(args_list)
         if input_file is None:
-            # 自动补 main.vix
-            candidate = Path("main.vix").resolve()
+            # 从 vindex.toml 读取入口文件
+            try:
+                with open("vindex.toml", "rb") as f:
+                    vindex_data = tomllib.load(f)
+                entrypoint = vindex_data.get("project", {}).get("entrypoint", "main.vix")
+            except Exception:
+                entrypoint = "main.vix"
+            candidate = Path(entrypoint).resolve()
             if not candidate.exists():
-                log.error("未找到 main.vix，请指定输入文件或确保项目根目录有 main.vix")
+                log.error(f"未找到入口文件 {entrypoint}，请指定输入文件或确保项目根目录有该文件")
                 return
             input_file = candidate
         # vixc_flags 中已不含 -o 和 .vix 文件, 可安全透传
