@@ -287,6 +287,30 @@ def parse_pack_name(package_name: str, parent: Path | None = None) -> PackageNam
     )
 
 
+def build_dep_tree(libs_path: Path, root_deps: list[str]) -> set[str]:
+    """递归构建完整依赖引用集合，返回所有被引用的 full_name 集合。"""
+    import tomllib
+
+    referenced: set[str] = set()
+    queue = list(root_deps)
+    while queue:
+        spec = queue.pop(0)
+        if spec in referenced:
+            continue
+        info = parse_pack_name(spec, parent=libs_path)
+        referenced.add(info.full_name)
+        vindex_path = info.pack_path / "vindex.toml"
+        if vindex_path.exists():
+            with open(vindex_path, "rb") as f:
+                data = tomllib.load(f)
+            sub_deps = data.get("project", {}).get("deps", [])
+            sub_legacy = list(data.get("dependencies", {}).keys())
+            for d in dict.fromkeys(sub_deps + sub_legacy):
+                if d not in referenced:
+                    queue.append(d)
+    return referenced
+
+
 def add_dep_to_vindex(pack_spec: str) -> bool:
     """将包 spec 写入当前项目 vindex.toml 的 deps 数组。
 

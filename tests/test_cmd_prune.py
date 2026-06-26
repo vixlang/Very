@@ -27,8 +27,9 @@ class TestPruneCmd:
         with pytest.raises(VeryFatalError):
             build_and_run_command(PruneCmd, namespace=argparse.Namespace())
 
-    def test_default_mode(self, libs_with_packages: Path):
+    def test_default_mode(self, libs_with_packages: Path, monkeypatch: pytest.MonkeyPatch):
         libs = libs_with_packages
+        monkeypatch.setattr("cmds.utils.ask_confirm", lambda prompt, default=False: False)
         build_and_run_command(PruneCmd, namespace=argparse.Namespace())
         assert not (libs / "github.com" / "fexcode" / "broken").exists()
         assert not (libs / "gitee.com").exists()
@@ -51,8 +52,20 @@ class TestPruneCmd:
         assert (libs / "github.com" / "fexcode" / "vnet").exists()
 
     def test_summary_output(
-        self, libs_with_packages: Path, capsys: pytest.CaptureFixture
+        self, libs_with_packages: Path, capsys: pytest.CaptureFixture, monkeypatch: pytest.MonkeyPatch
     ):
+        monkeypatch.setattr("cmds.utils.ask_confirm", lambda prompt, default=False: False)
         build_and_run_command(PruneCmd, namespace=argparse.Namespace())
         captured = capsys.readouterr()
         assert captured.out
+
+    def test_unused_mode(self, tmp_config: dict, monkeypatch: pytest.MonkeyPatch):
+        libs = tmp_config["libs_path"]
+        pkg = libs / "github.com" / "fexcode" / "vnet"
+        pkg.mkdir(parents=True)
+        (pkg / "vindex.toml").write_text('[package]\nname = "vnet"\nversion = "1.0.0"\n')
+        monkeypatch.setattr("cmds.utils.ask_confirm", lambda prompt, default=False: False)
+
+        build_and_run_command(PruneCmd, namespace=argparse.Namespace(unused_only=True))
+
+        assert (libs / "github.com" / "fexcode" / "vnet").exists()
