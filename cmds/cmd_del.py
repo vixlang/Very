@@ -1,6 +1,6 @@
 from .base import Command
 import argparse
-from .utils import log, parse_pack_name, ask_confirm
+from .utils import log, parse_pack_name, ask_confirm, Config
 import shutil
 import os
 import stat
@@ -33,22 +33,29 @@ class DelCmd(Command):
 
     def execute(self):
         package_name = getattr(self.namespace, "package", "unknown")
-        pack_info = parse_pack_name(package_name)
+
+        # 本地优先，找不到再查全局
+        pack_info = parse_pack_name(package_name, parent=Config.local_libs_path())
         PACK_PATH = pack_info.pack_path
 
         if not PACK_PATH.exists():
-            log.error(
-                f"包不存在: [white]{pack_info.full_name}[/white]\n\n"
-                f"[yellow]可能的原因:[/yellow]\n"
-                f"  • 包名拼写错误\n"
-                f"  • 该包尚未安装\n"
-                f"  • 包路径不正确\n\n"
-                f"[dim]使用以下命令查看已安装的包:[/dim]\n"
-                f"  [green]very list[/green]\n\n"
-                f"[dim]或使用以下命令安装包:[/dim]\n"
-                f"  [green]very add {package_name}[/green]"
-            )
-            return
+            global_info = parse_pack_name(package_name, parent=Config.VIX_LIBS_PATH)
+            if global_info.pack_path.exists():
+                pack_info = global_info
+                PACK_PATH = global_info.pack_path
+            else:
+                log.error(
+                    f"包不存在: [white]{pack_info.full_name}[/white]\n\n"
+                    f"[yellow]可能的原因:[/yellow]\n"
+                    f"  • 包名拼写错误\n"
+                    f"  • 该包尚未安装\n"
+                    f"  • 包路径不正确\n\n"
+                    f"[dim]使用以下命令查看已安装的包:[/dim]\n"
+                    f"  [green]very list[/green]\n\n"
+                    f"[dim]或使用以下命令安装包:[/dim]\n"
+                    f"  [green]very add {package_name}[/green]"
+                )
+                return
 
         log.section(f"删除包: {pack_info.full_name}")
 
