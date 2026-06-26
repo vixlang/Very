@@ -11,6 +11,8 @@ from . import (
     cmd_install,
     cmd_update,
     cmd_run,
+    cmd_exe,
+    cmd_tool,
 )
 from .utils import log as log, console as console
 
@@ -37,6 +39,16 @@ CMD_REGISTRY: dict[str, dict] = {
         "cls": cmd_update.UpdateCmd,
         "color": "cyan",
         "desc": "更新已安装的包",
+    },
+    "exe": {
+        "cls": cmd_exe.ExeCmd,
+        "color": "yellow",
+        "desc": "执行 Vix 工具",
+    },
+    "tool": {
+        "cls": cmd_tool.ToolCmd,
+        "color": "green",
+        "desc": "管理 Vix 工具",
     },
 }
 
