@@ -79,7 +79,7 @@ def install_tool(packname: str, parent: Path | None = None) -> Path | None:
     os.chdir(str(PACK_PATH))
     try:
         ns = argparse.Namespace()
-        build_cmd = BuildCmd.create_for_subcommand(ns, ["-o", str(binary_path)])
+        build_cmd = BuildCmd.create_for_subcommand(ns, ["-o", str(binary_path)], allow_entrypoint=True)
         code = build_cmd.execute()
         if code is not None and code != 0:
             log.error(f"编译 {info.full_name} 失败")

@@ -23,7 +23,7 @@ deps = [
 |---|---|---|---|---|
 | `name` | string | 是 | — | 项目名称，用于编译产物的默认输出文件名 |
 | `version` | string | 否 | — | 项目版本号 |
-| `entrypoint` | string | 否 | `"main.vix"` | 项目入口文件，`very build` / `very run` / `very good` 无参数时默认读取此字段 |
+| `entrypoint` | string | 否 | `"main.vix"` | **仅 vtool 包使用**。指定编译入口文件；vlib 包入口必须是 `main.vix` |
 | `deps` | array | 否 | `[]` | 依赖的包列表，每个元素是一个包名（支持 `add` 命令的所有简写格式） |
 
 ### `[dependencies]` — 已弃用

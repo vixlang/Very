@@ -3,7 +3,6 @@
 from .base import Command
 import argparse
 import subprocess
-import tomllib
 from pathlib import Path
 from .utils import log, console
 
@@ -28,8 +27,7 @@ class GoodCmd(Command):
 
     def _resolve_files(self, patterns: list[str]) -> list[Path]:
         if not patterns:
-            entrypoint = self._get_entrypoint()
-            main = Path(entrypoint)
+            main = Path("main.vix")
             return [main] if main.exists() else []
 
         files: list[Path] = []
@@ -50,15 +48,6 @@ class GoodCmd(Command):
                         seen.add(resolved)
         return files
 
-    @staticmethod
-    def _get_entrypoint() -> str:
-        try:
-            with open("vindex.toml", "rb") as f:
-                data = tomllib.load(f)
-            return data.get("project", {}).get("entrypoint", "main.vix")
-        except Exception:
-            return "main.vix"
-
     def execute(self):
         if not Path("vindex.toml").exists():
             log.error("未找到 vindex.toml，请确保在项目根目录运行此命令")
@@ -71,8 +60,7 @@ class GoodCmd(Command):
             if patterns:
                 log.error(f"未找到匹配的文件: {' '.join(patterns)}")
             else:
-                entrypoint = self._get_entrypoint()
-                log.error(f"未找到入口文件 {entrypoint}，请指定要检查的文件")
+                log.error("未找到 main.vix，请指定要检查的文件")
             return
 
         has_error = False
