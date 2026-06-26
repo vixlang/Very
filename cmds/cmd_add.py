@@ -137,7 +137,7 @@ class AddCmd(Command):
                 pkg_legacy = list(vindex_data.get("dependencies", {}).keys())
                 transitive = list(dict.fromkeys(pkg_deps + pkg_legacy))
                 if transitive:
-                    log.info("检测到传递依赖，正在安装...")
+                    log.info(f"检测到 [cyan]{len(transitive)}[/cyan] 个传递依赖: [dim]{', '.join(transitive)}[/dim]")
                     PackageInstaller.install_transitive_deps(parent, transitive)
 
         log.success(f"包 {packinfo.full_name} 添加成功")

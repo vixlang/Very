@@ -112,10 +112,12 @@ class PackageInstaller:
         return InstallResult(spec=spec, success=True)
 
     @staticmethod
-    def install_transitive_deps(parent: Path, specs: list[str], visited: set[str] | None = None):
+    def install_transitive_deps(parent: Path, specs: list[str], visited: set[str] | None = None, depth: int = 0):
         """递归安装传递依赖。"""
         import tomllib
+        from .utils import log
 
+        indent = "  " * depth
         if visited is None:
             visited = set()
         for spec in specs:
@@ -124,12 +126,14 @@ class PackageInstaller:
             visited.add(spec)
             info = parse_pack_name(spec, parent=parent)
 
-            if not info.pack_path.exists():
+            if info.pack_path.exists():
+                log.info(f"{indent}⊳ {spec} [dim]已存在, 检查其依赖[/dim]")
+            else:
+                log.info(f"{indent}⊳ {spec} [cyan]正在安装...[/cyan]")
                 result = PackageInstaller.install_one(spec, parent=parent)
                 if result.success:
-                    from .utils import log
-                    log.success(f"已安装传递依赖: {spec}")
-
+                    log.success(f"{indent}  ✔ {spec}")
+            log.info(f"{indent}  └ 检查 {spec} 的依赖...")
             vindex_path = info.pack_path / "vindex.toml"
             if vindex_path.exists():
                 with open(vindex_path, "rb") as f:
@@ -138,4 +142,6 @@ class PackageInstaller:
                 sub_legacy = list(data.get("dependencies", {}).keys())
                 sub = list(dict.fromkeys(sub_deps + sub_legacy))
                 if sub:
-                    PackageInstaller.install_transitive_deps(parent, sub, visited)
+                    PackageInstaller.install_transitive_deps(parent, sub, visited, depth + 1)
+                else:
+                    log.info(f"{indent}    [dim]无更多依赖[/dim]")
