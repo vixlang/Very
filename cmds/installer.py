@@ -110,3 +110,32 @@ class PackageInstaller:
             )
 
         return InstallResult(spec=spec, success=True)
+
+    @staticmethod
+    def install_transitive_deps(parent: Path, specs: list[str], visited: set[str] | None = None):
+        """递归安装传递依赖。"""
+        import tomllib
+
+        if visited is None:
+            visited = set()
+        for spec in specs:
+            if spec in visited:
+                continue
+            visited.add(spec)
+            info = parse_pack_name(spec, parent=parent)
+
+            if not info.pack_path.exists():
+                result = PackageInstaller.install_one(spec, parent=parent)
+                if result.success:
+                    from .utils import log
+                    log.success(f"已安装传递依赖: {spec}")
+
+            vindex_path = info.pack_path / "vindex.toml"
+            if vindex_path.exists():
+                with open(vindex_path, "rb") as f:
+                    data = tomllib.load(f)
+                sub_deps = data.get("project", {}).get("deps", [])
+                sub_legacy = list(data.get("dependencies", {}).keys())
+                sub = list(dict.fromkeys(sub_deps + sub_legacy))
+                if sub:
+                    PackageInstaller.install_transitive_deps(parent, sub, visited)

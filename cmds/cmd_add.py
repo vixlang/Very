@@ -126,6 +126,20 @@ class AddCmd(Command):
             if added:
                 log.success(f"已添加 {packname} 到 deps")
 
+        # ── 递归安装传递依赖 ──
+        if not global_install:
+            vindex_path = PACK_PATH / "vindex.toml"
+            if vindex_path.exists():
+                import tomllib
+                with open(vindex_path, "rb") as f:
+                    vindex_data = tomllib.load(f)
+                pkg_deps = vindex_data.get("project", {}).get("deps", [])
+                pkg_legacy = list(vindex_data.get("dependencies", {}).keys())
+                transitive = list(dict.fromkeys(pkg_deps + pkg_legacy))
+                if transitive:
+                    log.info("检测到传递依赖，正在安装...")
+                    PackageInstaller.install_transitive_deps(parent, transitive)
+
         log.success(f"包 {packinfo.full_name} 添加成功")
 
     def set_parser(self, p: argparse._SubParsersAction) -> argparse.ArgumentParser:
