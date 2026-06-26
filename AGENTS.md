@@ -23,6 +23,8 @@ very run [-k|--keep] [vixc options...] # build + run + cleanup (keep with -k)
 very install                         # install deps from vindex.toml
 very update [<package>]              # git pull package(s)
 very tool add <package>              # clone + compile a vix tool into $VIX_HOME/tools/
+very tool del <package>              # rm -rf tool source + binary from $VIX_HOME/tools/
+very tool update <package>           # git pull + recompile a vix tool
 very tool search [keyword] [options] # search vix tools (vtool-* repos on github.com/vixlang)
 very exe <tool> [args...]            # find and run a compiled tool (auto-installs if missing)
 ```

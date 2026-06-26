@@ -176,6 +176,34 @@ very tool add fexcode.vtool  # 安装 github.com/fexcode/vtool
 3. 读取 `vindex.toml` 获取 `project.name`
 4. 编译，输出到 `$VIX_HOME/tools/{name}.exe`
 
+### very tool del - 删除 Vix 工具
+
+`very tool del` 命令用于删除已安装的 Vix 工具，包括编译产物和源码。
+
+#### 格式
+```bash
+very tool del <工具名>
+```
+
+#### 示例
+```bash
+very tool del game           # 删除 game 工具
+```
+
+### very tool update - 更新 Vix 工具
+
+`very tool update` 命令用于更新已安装的 Vix 工具（git pull + 重新编译）。如果工具未安装，会自动执行安装。
+
+#### 格式
+```bash
+very tool update <工具名>
+```
+
+#### 示例
+```bash
+very tool update game        # 更新 game 工具
+```
+
 ### very tool search - 搜索 Vix 工具
 
 `very tool search` 命令用于从 GitHub vixlang 组织搜索可用的 Vix 工具（`vtool-*` 仓库）。

@@ -18,6 +18,8 @@ from pathlib import Path
 import argparse
 import sys
 import os
+import shutil
+import stat
 import json
 import time
 import urllib.request
@@ -27,6 +29,14 @@ from rich.live import Live
 from rich.spinner import Spinner
 
 _SSL_CTX = ssl.create_default_context()
+
+
+def _remove_readonly_tree(path: Path):
+    """shutil.rmtree with Windows .git read-only file handling."""
+    def _remove_readonly(func, p, exc_info):
+        os.chmod(p, stat.S_IWRITE)
+        func(p)
+    shutil.rmtree(path, onexc=_remove_readonly)
 
 
 def install_tool(packname: str, parent: Path | None = None) -> Path | None:
@@ -115,6 +125,12 @@ class ToolCmd(Command):
         add_parser = sub.add_parser("add", help="安装 Vix 工具")
         add_parser.add_argument("package", help="工具包名")
 
+        del_parser = sub.add_parser("del", help="删除 Vix 工具")
+        del_parser.add_argument("package", help="工具包名")
+
+        update_parser = sub.add_parser("update", help="更新 Vix 工具")
+        update_parser.add_argument("package", help="工具包名")
+
         search_parser = sub.add_parser(
             "search",
             help="搜索可用的 Vix 工具",
@@ -145,6 +161,10 @@ class ToolCmd(Command):
         sub = getattr(self.namespace, "tool_subcommand", None)
         if sub == "add":
             self._cmd_add()
+        elif sub == "del":
+            self._cmd_del()
+        elif sub == "update":
+            self._cmd_update()
         elif sub == "search":
             self._cmd_search()
         else:
@@ -158,6 +178,77 @@ class ToolCmd(Command):
             log.error("请指定工具包名")
             return
         install_tool(packname)
+
+    def _cmd_del(self):
+        packname = getattr(self.namespace, "package", "")
+        if not packname:
+            log.error("请指定工具包名")
+            return
+
+        parent = Config.VIX_TOOLS_PATH
+        info = parse_tool_name(packname, parent=parent)
+        PACK_PATH = info.pack_path
+
+        if not PACK_PATH.exists():
+            log.error(f"工具 {info.full_name} 未安装")
+            return
+
+        # 获取 project.name 以找到编译产物
+        project_name = info.repo_name
+        content = VIndexTool(PACK_PATH).content()
+        if content is not None:
+            project_name = content.get("project", {}).get("name", info.repo_name)
+        suffix = ".exe" if sys.platform == "win32" else ""
+        binary_path = parent / f"{project_name}{suffix}"
+
+        log.section(f"删除工具: {info.full_name}")
+
+        # 删除编译产物
+        if binary_path.exists():
+            binary_path.unlink()
+            log.success(f"已删除: {binary_path}")
+
+        # 删除源码目录
+        _remove_readonly_tree(PACK_PATH)
+        log.success(f"已删除: {PACK_PATH}")
+
+        # 清理空父目录
+        for d in [PACK_PATH.parent, PACK_PATH.parent.parent]:
+            if d.exists() and not any(d.iterdir()):
+                d.rmdir()
+
+        log.success(f"工具 {project_name} 已删除")
+
+    def _cmd_update(self):
+        packname = getattr(self.namespace, "package", "")
+        if not packname:
+            log.error("请指定工具包名")
+            return
+
+        parent = Config.VIX_TOOLS_PATH
+        info = parse_tool_name(packname, parent=parent)
+        PACK_PATH = info.pack_path
+
+        if not PACK_PATH.exists():
+            log.info(f"工具 {info.full_name} 未安装，正在安装...")
+            install_tool(packname)
+            return
+
+        log.section(f"更新工具: {info.full_name}")
+        try:
+            repo = Repo(PACK_PATH)
+            origin = repo.remotes.origin
+            origin.pull()
+            log.success(f"已拉取最新代码: {PACK_PATH}")
+        except Exception as e:
+            log.error(f"拉取失败: {e}")
+            return
+
+        # 重新编译
+        log.info("正在重新编译...")
+        binary_path = install_tool(packname)
+        if binary_path is not None:
+            log.success(f"工具 {info.full_name} 已更新")
 
     # ---- Search ----
 
