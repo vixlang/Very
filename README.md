@@ -26,19 +26,9 @@ very <命令> --help     # 查看具体命令的详细信息
 官方仓库的标准库项目名以`vlib-`开头，工具项目名以`vtool-`开头
 
 
-## 包索引格式
-```bash
-very add vnet                        # 下载 github.com/vixlang/vlib-vnet
-very add fexcode.vnet                # 下载 github.com/fexcode/vnet 仓库  
-very add fexcode.vnet@master         # 下载 github.com/fexcode/vnet 仓库 master 分支      
-very add gitee.com:fexcode.vnet      # 下载 gitee.com/fexcode/vnet 仓库  
-very add gitee:fexcode.vnet@master   # .com 可以省略  
-```
+## vindex.toml 项目配置
 
-> o,我还给自己留了个语法糖（因为我比较喜欢gitee嘛），  
-> @fexcode.very  # 等价于 gitee:fexcode.very
-
----
+> 详见 [docs/vindex-toml.md](docs/vindex-toml.md) — 包含所有配置项、依赖格式说明和示例。
 
 ## Very 命令介绍
 
@@ -132,7 +122,7 @@ very init my-project    # 创建 my-project/ 项目目录
 #### 生成结构
 ```
 my-project/
-├── vindex.toml       # 项目配置
+├── vindex.toml       # 项目配置（详见 docs/vindex-toml.md）
 ├── main.vix          # 入口文件
 ├── .gitignore
 └── README.md
