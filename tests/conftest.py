@@ -16,7 +16,7 @@ from cmds.utils import Config
 
 @pytest.fixture
 def tmp_config(tmp_path: Path, monkeypatch: MonkeyPatch) -> dict[str, Path]:
-    """Point Config.VIX_HOME and Config.VIX_LIBS_PATH to temp directories.
+    """Point Config paths to temp directories.
 
     Returns ``{"vix_home": …, "libs_path": …}`` for reference.
     """
@@ -24,6 +24,7 @@ def tmp_config(tmp_path: Path, monkeypatch: MonkeyPatch) -> dict[str, Path]:
     libs.mkdir()
     monkeypatch.setattr(Config, "VIX_HOME", tmp_path)
     monkeypatch.setattr(Config, "VIX_LIBS_PATH", libs)
+    monkeypatch.setattr(Config, "local_libs_path", staticmethod(lambda: libs))
     return {"vix_home": tmp_path, "libs_path": libs}
 
 

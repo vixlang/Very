@@ -12,7 +12,7 @@ class ListCmd(Command):
 
     def execute(self):
         tree_mode = getattr(self.namespace, "tree", False)
-        libs_path = Config.VIX_LIBS_PATH
+        libs_path = Config.local_libs_path()
 
         if not libs_path.exists():
             log.critical("包目录不存在!")

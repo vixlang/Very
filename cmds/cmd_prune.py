@@ -10,7 +10,7 @@ class PruneCmd(Command):
     NAME = "prune"
 
     def execute(self):
-        libs_path = Config.VIX_LIBS_PATH
+        libs_path = Config.local_libs_path()
 
         if not libs_path.exists():
             log.critical("包目录不存在!")

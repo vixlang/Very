@@ -13,7 +13,9 @@ from tests.conftest import build_and_run_command
 class TestPruneCmd:
 
     def test_libs_path_not_exist(self, monkeypatch: pytest.MonkeyPatch):
-        monkeypatch.setattr(Config, "VIX_LIBS_PATH", Path("/nonexistent/path"))
+        p = Path("/nonexistent/path")
+        monkeypatch.setattr(Config, "VIX_LIBS_PATH", p)
+        monkeypatch.setattr(Config, "local_libs_path", staticmethod(lambda: p))
         with pytest.raises(VeryFatalError):
             build_and_run_command(PruneCmd, namespace=argparse.Namespace())
 
@@ -21,6 +23,7 @@ class TestPruneCmd:
         f = tmp_path / "not_a_dir"
         f.write_text("")
         monkeypatch.setattr(Config, "VIX_LIBS_PATH", f)
+        monkeypatch.setattr(Config, "local_libs_path", staticmethod(lambda: f))
         with pytest.raises(VeryFatalError):
             build_and_run_command(PruneCmd, namespace=argparse.Namespace())
 

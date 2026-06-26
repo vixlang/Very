@@ -46,7 +46,7 @@ class InstallCmd(Command):
             log.info("vindex.toml 中没有声明依赖")
             return
 
-        local_parent = Path.cwd() / ".vix" / "libs"
+        local_parent = Config.local_libs_path()
 
         log.section("安装依赖")
         success = []

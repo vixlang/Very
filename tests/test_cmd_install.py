@@ -47,7 +47,7 @@ class TestInstallCmd:
 
         build_and_run_command(InstallCmd, namespace=argparse.Namespace())
 
-        pkg = tmp_path / ".vix" / "libs" / "github.com" / "fexcode" / "vnet"
+        pkg = tmp_config["libs_path"] / "github.com" / "fexcode" / "vnet"
         assert pkg.is_dir()
         assert (pkg / "vindex.toml").is_file()
 

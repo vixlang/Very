@@ -74,6 +74,11 @@ class Config:
     VIX_HOME: Path = Path(os.getenv("VIX_HOME", "./.vix"))
     VIX_LIBS_PATH: Path = Path(os.getenv("VIX_HOME", "./.vix")) / "libs"
 
+    @staticmethod
+    def local_libs_path() -> Path:
+        """项目本地 .vix/libs 目录（与 very add 默认行为一致）"""
+        return Path.cwd() / ".vix" / "libs"
+
 
 # Package naming constants
 DEFAULT_HOST = "github.com"

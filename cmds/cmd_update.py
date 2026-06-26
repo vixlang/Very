@@ -21,11 +21,15 @@ class UpdateCmd(Command):
     def execute(self):
         packname = self.namespace.package
 
+        local_libs = Config.local_libs_path()
         if packname:
-            packinfo = parse_pack_name(packname)
+            packinfo = parse_pack_name(packname, parent=local_libs)
             self._update_one(packinfo.full_name, packinfo.pack_path)
         else:
-            packages = list(iter_package_dirs(Config.VIX_LIBS_PATH))
+            if not local_libs.exists():
+                log.info("没有已安装的包")
+                return
+            packages = list(iter_package_dirs(local_libs))
             if not packages:
                 log.info("没有已安装的包")
                 return

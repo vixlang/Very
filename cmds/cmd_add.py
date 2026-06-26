@@ -45,7 +45,7 @@ class AddCmd(Command):
         if global_install:
             parent = Config.VIX_LIBS_PATH
         else:
-            parent = Path.cwd() / ".vix" / "libs"
+            parent = Config.local_libs_path()
 
         packinfo = parse_pack_name(packname, parent=parent)
 
