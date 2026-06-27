@@ -54,7 +54,7 @@ def install_tool(packname: str, parent: Path | None = None) -> Path | None:
     PACK_PATH = info.pack_path
 
     if not PACK_PATH.exists():
-        typer.secho(f"[bold]安装工具: {info.full_name}[/bold]", fg="cyan")
+        console.print(f"[bold cyan]安装工具: {info.full_name}[/bold cyan]")
         typer.secho(f"源: {info.git_url}", fg="cyan")
         if info.branch_name:
             typer.secho(f"分支: {info.branch_name}", fg="cyan")
@@ -86,7 +86,7 @@ def install_tool(packname: str, parent: Path | None = None) -> Path | None:
     binary_name = f"{project_name}{suffix}"
     binary_path = (parent / binary_name).resolve()
 
-    typer.secho(f"正在编译 [cyan]{project_name}[/cyan] ...", fg="cyan")
+    console.print(f"[cyan]正在编译 {project_name} ...[/cyan]")
     binary_path.parent.mkdir(parents=True, exist_ok=True)
 
     from . import cmd_build
@@ -152,7 +152,7 @@ def delete(package: str = typer.Argument(..., help="工具包名")):
     suffix = ".exe" if os.name == "nt" else ""
     binary_path = parent / f"{project_name}{suffix}"
 
-    typer.secho(f"[bold]删除工具: {info.full_name}[/bold]", fg="cyan")
+    console.print(f"[bold cyan]删除工具: {info.full_name}[/bold cyan]")
 
     if binary_path.exists():
         binary_path.unlink()
@@ -180,7 +180,7 @@ def update(package: str = typer.Argument(..., help="工具包名")):
         install_tool(package)
         return
 
-    typer.secho(f"[bold]更新工具: {info.full_name}[/bold]", fg="cyan")
+    console.print(f"[bold cyan]更新工具: {info.full_name}[/bold cyan]")
     try:
         repo = Repo(PACK_PATH)
         origin = repo.remotes.origin
@@ -349,7 +349,7 @@ def search(
         console.print()
         return
 
-    typer.secho(f"[bold]搜索工具: {kw if kw else '全部'}[/bold]", fg="cyan")
+    console.print(f"[bold cyan]搜索工具: {kw if kw else '全部'}[/bold cyan]")
 
     try:
         if no_cache:

@@ -180,7 +180,7 @@ def search(
         console.print()
         return
 
-    typer.secho(f"[bold]搜索包: {kw if kw else '全部'}[/bold]", fg="cyan")
+    console.print(f"[bold cyan]搜索包: {kw if kw else '全部'}[/bold cyan]")
 
     try:
         if no_cache:

@@ -47,7 +47,7 @@ def delete(
             )
             raise typer.Exit(code=1)
 
-    typer.secho(f"[bold]删除包: {pack_info.full_name}[/bold]", fg="cyan")
+    console.print(f"[bold cyan]删除包: {pack_info.full_name}[/bold cyan]")
 
     if not ask_confirm("确认删除?", default=False):
         typer.secho("已取消操作", fg="yellow")
@@ -55,6 +55,6 @@ def delete(
 
     try:
         shutil.rmtree(PACK_PATH, onexc=_remove_readonly)
-        typer.secho(f"包 [bold]{pack_info.full_name}[/bold] 已删除", fg="green")
+        console.print(f"[green]包 [bold]{pack_info.full_name}[/bold] 已删除[/green]")
     except Exception as e:
         console.print(Panel(f"[red]删除失败: {e}[/red]", border_style="red"))

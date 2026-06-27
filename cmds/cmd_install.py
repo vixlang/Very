@@ -37,7 +37,7 @@ def install(
 
     local_parent = Config.local_libs_path()
 
-    typer.secho("[bold]安装依赖[/bold]", fg="cyan")
+    console.print("[bold cyan]安装依赖[/bold cyan]")
     success = []
     skipped = []
     global_skipped = []
@@ -56,7 +56,7 @@ def install(
                 continue
 
         PACK_PATH = local_packinfo.pack_path
-        typer.secho(f"正在安装 [cyan]{spec}[/cyan] ...", fg="cyan")
+        console.print(f"[cyan]正在安装 {spec} ...[/cyan]")
         with create_git_progress(local_packinfo.full_name) as progress:
             git_progress = GitProgress(progress, local_packinfo.full_name)
             try:
@@ -93,7 +93,7 @@ def install(
             success.append(spec)
 
     console.print()
-    typer.secho("[bold]安装结果[/bold]", fg="cyan")
+    console.print("[bold cyan]安装结果[/bold cyan]")
     if success:
         typer.secho(f"成功: {', '.join(success)}", fg="green")
     if skipped:

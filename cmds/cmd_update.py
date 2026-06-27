@@ -14,7 +14,7 @@ def _update_one(display_name: str, repo_path: Path, libs_parent: Path, visited: 
     if not repo_path.exists():
         console.print(f"[red]包 {display_name} 未安装[/red]")
         return
-    typer.secho(f"正在更新 [cyan]{display_name}[/cyan] ...", fg="cyan")
+    console.print(f"[cyan]正在更新 {display_name} ...[/cyan]")
     try:
         repo = Repo(repo_path)
         origin = repo.remotes.origin
@@ -36,7 +36,7 @@ def _update_one(display_name: str, repo_path: Path, libs_parent: Path, visited: 
         legacy = list(data.get("dependencies", {}).keys())
         transitive = list(dict.fromkeys(deps + legacy))
         if transitive:
-            typer.secho(f"  └ 检测到 [cyan]{len(transitive)}[/cyan] 个传递依赖: [dim]{', '.join(transitive)}[/dim]", fg="cyan")
+            console.print(f"  [cyan]└ 检测到 {len(transitive)} 个传递依赖: [dim]{', '.join(transitive)}[/dim][/cyan]")
             for dep_spec in transitive:
                 if dep_spec in visited:
                     continue
@@ -44,7 +44,7 @@ def _update_one(display_name: str, repo_path: Path, libs_parent: Path, visited: 
                 if dep_info.pack_path.exists():
                     _update_one(dep_spec, dep_info.pack_path, libs_parent, visited)
                 else:
-                    typer.secho(f"    ⊳ {dep_spec} [cyan]尚未安装, 正在安装...[/cyan]", fg="cyan")
+                    console.print(f"    [cyan]⊳ {dep_spec} 尚未安装, 正在安装...[/cyan]")
                     result = PackageInstaller.install_one(dep_spec, parent=libs_parent)
                     if result.success:
                         typer.secho(f"    ✔ {dep_spec}", fg="green")
@@ -71,7 +71,7 @@ def update(
         if not packages:
             typer.secho("没有已安装的包", fg="cyan")
             return
-        typer.secho("[bold]更新所有包[/bold]", fg="cyan")
+        console.print("[bold cyan]更新所有包[/bold cyan]")
         visited: set[str] = set()
         for _md, _ud, rd, full_name in packages:
             _update_one(full_name, rd, local_libs, visited)

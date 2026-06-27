@@ -2,7 +2,7 @@
 
 import typer
 import subprocess
-from .utils import Config
+from .utils import Config, console
 
 app = typer.Typer()
 
@@ -24,7 +24,7 @@ def exe(
     binary_path = Config.VIX_TOOLS_PATH / f"{tool}{suffix}"
 
     if not binary_path.exists():
-        typer.secho(f"工具 [cyan]{tool}[/cyan] 未安装，正在自动安装...", fg="cyan")
+        console.print(f"[cyan]工具 {tool} 未安装，正在自动安装...[/cyan]")
         from .cmd_tool import install_tool
         result = install_tool(tool)
         if result is None:

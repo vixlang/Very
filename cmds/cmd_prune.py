@@ -40,7 +40,7 @@ def prune(
             vindex_file = repo_dir / "vindex.toml"
             if not vindex_file.exists():
                 removed_packages.append(package_name)
-                typer.secho(f"无效包: [bold]{package_name}[/bold]", fg="yellow")
+                console.print(f"[bold yellow]无效包: {package_name}[/bold yellow]")
                 shutil.rmtree(repo_dir, onexc=_remove_readonly)
 
     if not invalid_only:
@@ -48,7 +48,7 @@ def prune(
             rel = empty_dir.relative_to(libs_path)
             removed_dirs.append(str(rel))
             empty_dir.rmdir()
-            typer.secho(f"清理空目录: [dim]{rel}[/dim]", fg="cyan")
+            console.print(f"[cyan]清理空目录: [dim]{rel}[/dim][/cyan]")
 
     if not empty_only and not invalid_only or unused:
         unused_packages = _remove_unused(libs_path)
@@ -76,7 +76,7 @@ def _remove_unused(libs_path: Path) -> list[str]:
             unused.append(full_name)
 
     if unused:
-        typer.secho(f"发现 [bold]{len(unused)}[/bold] 个孤立包: [dim]{', '.join(unused)}[/dim]", fg="yellow")
+        console.print(f"[bold yellow]发现 {len(unused)} 个孤立包: [dim]{', '.join(unused)}[/dim][/bold yellow]")
         from .utils import ask_confirm
         if ask_confirm("是否删除这些孤立包?", default=False):
             for _, _, repo_dir, full_name in iter_package_dirs(libs_path):
