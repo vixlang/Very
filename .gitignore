@@ -16,3 +16,4 @@ build/
 AGENTS.md
 # CodWhat cache
 .codwhat/
+.idea/

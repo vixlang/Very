@@ -1,84 +1,60 @@
-from .base import Command
-import argparse
-from .utils import log, parse_pack_name, ask_confirm, Config
+import typer
 import shutil
 import os
 import stat
+from .utils import parse_pack_name, ask_confirm, Config, console
+from rich.panel import Panel
+
+app = typer.Typer()
 
 
 def _remove_readonly(func, path, exc_info):
     os.chmod(path, stat.S_IWRITE)
     func(path)
 
-命令格式说明 = """
-|======================== very del 命令格式说明 ========================|
-[#] 格式为:
-[>]     very del <包名>
-[/]
-[#] 注意：
-[-]     • 默认仓库为 github.com
-[-]     • 支持简写语法
-[/]
-[#] 示例：
-[-]     very del fexcode.vnet                # 删除 github.com/fexcode/vnet
-[-]     very del gitee.com:fexcode.vnet      # 删除 gitee.com:fexcode/vnet
-[-]     very del gitee:fexcode.vnet          # .com 可以省略
-[-]     very del @fexcode.vnet               # @ 符号开头默认为 gitee.com
-|==================================================================|
-"""
 
+@app.callback(invoke_without_command=True)
+def delete(
+    package: str = typer.Argument(..., help="需要删除的包名（支持简写语法）"),
+):
+    """删除包"""
+    package_name = package
 
-class DelCmd(Command):
-    NAME = "del"
+    pack_info = parse_pack_name(package_name, parent=Config.local_libs_path())
+    PACK_PATH = pack_info.pack_path
 
-    def execute(self):
-        package_name = getattr(self.namespace, "package", "unknown")
-
-        # 本地优先，找不到再查全局
-        pack_info = parse_pack_name(package_name, parent=Config.local_libs_path())
-        PACK_PATH = pack_info.pack_path
-
-        if not PACK_PATH.exists():
-            global_info = parse_pack_name(package_name, parent=Config.VIX_LIBS_PATH)
-            if global_info.pack_path.exists():
-                pack_info = global_info
-                PACK_PATH = global_info.pack_path
-            else:
-                log.error(
-                    f"包不存在: [white]{pack_info.full_name}[/white]\n\n"
-                    f"[yellow]可能的原因:[/yellow]\n"
-                    f"  • 包名拼写错误\n"
-                    f"  • 该包尚未安装\n"
-                    f"  • 包路径不正确\n\n"
-                    f"[dim]使用以下命令查看已安装的包:[/dim]\n"
-                    f"  [green]very list[/green]\n\n"
-                    f"[dim]或使用以下命令安装包:[/dim]\n"
-                    f"  [green]very add {package_name}[/green]"
+    if not PACK_PATH.exists():
+        global_info = parse_pack_name(package_name, parent=Config.VIX_LIBS_PATH)
+        if global_info.pack_path.exists():
+            pack_info = global_info
+            PACK_PATH = global_info.pack_path
+        else:
+            console.print(
+                Panel(
+                    f"[bold red]包不存在: [white]{pack_info.full_name}[/white][/bold red]\n\n"
+                    "[yellow]可能的原因:[/yellow]\n"
+                    "  • 包名拼写错误\n"
+                    "  • 该包尚未安装\n"
+                    "  • 包路径不正确\n\n"
+                    "[dim]使用以下命令查看已安装的包:[/dim]\n"
+                    "  [green]very list[/green]\n\n"
+                    "[dim]或使用以下命令安装包:[/dim]\n"
+                    f"  [green]very add {package_name}[/green]",
+                    title="[bold red]✘ 错误[/bold red]",
+                    border_style="red",
+                    padding=(1, 2),
                 )
-                return
+            )
+            raise typer.Exit(code=1)
 
-        log.section(f"删除包: {pack_info.full_name}")
+    typer.secho(f"[bold]删除包: {pack_info.full_name}[/bold]", fg="cyan")
 
-        if not ask_confirm("确认删除?", default=False):
-            log.warning("已取消操作")
-            return
+    if not ask_confirm("确认删除?", default=False):
+        typer.secho("已取消操作", fg="yellow")
+        return
 
-        try:
-            shutil.rmtree(PACK_PATH, onexc=_remove_readonly)
-            log.success(f"包 [bold]{pack_info.full_name}[/bold] 已删除")
-        except Exception as e:
-            log.error(f"删除失败: {e}")
-
-    def set_parser(self, p: argparse._SubParsersAction) -> argparse.ArgumentParser:
-        del_parser = p.add_parser(
-            "del",
-            help="删除包",
-            description="从本地环境中删除已安装的 vix 包",
-            epilog=命令格式说明,
-            formatter_class=argparse.RawDescriptionHelpFormatter,
-        )
-        del_parser.add_argument(
-            "package",
-            help="需要删除的包名（支持简写语法）",
-        )
-        return del_parser
+    try:
+        shutil.rmtree(PACK_PATH, onexc=_remove_readonly)
+        typer.secho(f"包 [bold]{pack_info.full_name}[/bold] 已删除", fg="green")
+    except Exception as e:
+        console.print(Panel(f"[red]删除失败: {e}[/red]", border_style="red"))

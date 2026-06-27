@@ -1,108 +1,80 @@
 """very good — 检查 Vix 语法和类型"""
 
-from .base import Command
-import argparse
+import typer
 import subprocess
 import tomllib
 from pathlib import Path
-from .utils import log, console
+from .utils import console
+
+app = typer.Typer()
 
 
-class GoodCmd(Command):
-    NAME = "good"
+def _get_entrypoint() -> str:
+    try:
+        with open("vindex.toml", "rb") as f:
+            data = tomllib.load(f)
+        return data.get("project", {}).get("entrypoint", "main.vix")
+    except Exception:
+        return "main.vix"
 
-    def set_parser(self, p: argparse._SubParsersAction) -> argparse.ArgumentParser:
-        parser = p.add_parser(
-            self.NAME,
-            help="检查语法和类型",
-            epilog=命令格式说明,
-            formatter_class=argparse.RawDescriptionHelpFormatter,
+
+def _resolve_files(patterns: list[str]) -> list[Path]:
+    if not patterns:
+        entrypoint = _get_entrypoint()
+        main = Path(entrypoint)
+        return [main] if main.exists() else []
+
+    files: list[Path] = []
+    seen: set[Path] = set()
+    for p in patterns:
+        path = Path(p)
+        if path.is_dir():
+            for f in sorted(path.rglob("*.vix")):
+                if f not in seen:
+                    files.append(f)
+                    seen.add(f)
+        else:
+            expanded = list(Path(".").glob(p)) if ("*" in p or "?" in p) else [path]
+            for f in expanded:
+                resolved = f.resolve()
+                if f.exists() and resolved not in seen:
+                    files.append(f)
+                    seen.add(resolved)
+    return files
+
+
+@app.callback(invoke_without_command=True)
+def good(
+    files: list[str] = typer.Argument(None, help="要检查的 .vix 文件或目录 (支持通配符, 默认: main.vix)"),
+):
+    """检查语法和类型"""
+    if not Path("vindex.toml").exists():
+        console.print("[red]未找到 vindex.toml，请确保在项目根目录运行此命令[/red]")
+        raise typer.Exit(code=1)
+
+    patterns = files or []
+    resolved = _resolve_files(patterns)
+
+    if not resolved:
+        if patterns:
+            console.print(f"[red]未找到匹配的文件: {' '.join(patterns)}[/red]")
+        else:
+            entrypoint = _get_entrypoint()
+            console.print(f"[red]未找到入口文件 {entrypoint}，请指定要检查的文件[/red]")
+        raise typer.Exit(code=1)
+
+    has_error = False
+    for i, f in enumerate(resolved):
+        if i > 0:
+            console.print()
+        console.print(f"  [green]ℹ[/green]  检查: [dim]{f}[/dim]")
+        result = subprocess.run(
+            ["vixc", str(f), "--check"],
+            cwd=Path(".").resolve(),
         )
-        parser.add_argument(
-            "files",
-            nargs="*",
-            default=[],
-            help="要检查的 .vix 文件或目录 (支持通配符, 默认: main.vix)",
-        )
-        return parser
+        if result.returncode != 0:
+            has_error = True
 
-    def _resolve_files(self, patterns: list[str]) -> list[Path]:
-        if not patterns:
-            entrypoint = self._get_entrypoint()
-            main = Path(entrypoint)
-            return [main] if main.exists() else []
-
-        files: list[Path] = []
-        seen: set[Path] = set()
-        for p in patterns:
-            path = Path(p)
-            if path.is_dir():
-                for f in sorted(path.rglob("*.vix")):
-                    if f not in seen:
-                        files.append(f)
-                        seen.add(f)
-            else:
-                expanded = list(Path(".").glob(p)) if ("*" in p or "?" in p) else [path]
-                for f in expanded:
-                    resolved = f.resolve()
-                    if f.exists() and resolved not in seen:
-                        files.append(f)
-                        seen.add(resolved)
-        return files
-
-    @staticmethod
-    def _get_entrypoint() -> str:
-        try:
-            with open("vindex.toml", "rb") as f:
-                data = tomllib.load(f)
-            return data.get("project", {}).get("entrypoint", "main.vix")
-        except Exception:
-            return "main.vix"
-
-    def execute(self):
-        if not Path("vindex.toml").exists():
-            log.error("未找到 vindex.toml，请确保在项目根目录运行此命令")
-            return
-
-        patterns = self.namespace.files
-        files = self._resolve_files(patterns)
-
-        if not files:
-            if patterns:
-                log.error(f"未找到匹配的文件: {' '.join(patterns)}")
-            else:
-                entrypoint = self._get_entrypoint()
-                log.error(f"未找到入口文件 {entrypoint}，请指定要检查的文件")
-            return
-
-        has_error = False
-        for i, f in enumerate(files):
-            if i > 0:
-                console.print()
-            console.print(f"  [green]ℹ[/green]  检查: [dim]{f}[/dim]")
-            result = subprocess.run(
-                ["vixc", str(f), "--check"],
-                cwd=Path(".").resolve(),
-            )
-            if result.returncode != 0:
-                has_error = True
-
-        if not has_error:
-            console.print("  [green]✔[/green]  全部通过")
-        return 1 if has_error else 0
-
-
-命令格式说明 = """
-|======================== very good 命令格式说明 ========================|
-[#] 格式为:
-[>]     very good [<file>...]
-[/]
-[#] 说明：检查 Vix 语法和类型，不生成输出文件
-[#] 参数:
-[>]     file      要检查的 .vix 文件、目录或通配符（默认 main.vix）
-[#] 示例:
-[>]     very good
-[>]     very good src/
-[>]     very good src/*.vix lib/*.vix
-|==================================================================|
-"""
+    if not has_error:
+        console.print("  [green]✔[/green]  全部通过")
+    raise typer.Exit(code=1 if has_error else 0)

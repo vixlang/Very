@@ -1,38 +1,44 @@
-"""very tool — manage Vix tools (add, search)."""
+"""very tool — manage Vix tools."""
 
-from .base import Command
-from .cmd_build import BuildCmd
-from .utils import (
-    VTOOL_PREFIX,
-    VIndexTool,
-    Config,
-    log,
-    console,
-    err_console,
-    parse_tool_name,
-    create_git_progress,
-)
-from .installer import GitProgress
-from git import Repo
-from pathlib import Path
-import argparse
-import sys
-import os
-import shutil
-import stat
+import typer
 import json
 import time
+from pathlib import Path
 import urllib.request
 import ssl
 from rich.table import Table
 from rich.live import Live
 from rich.spinner import Spinner
+from .utils import (
+    VTOOL_PREFIX, VIndexTool, Config, console, parse_tool_name,
+    create_git_progress, DEFAULT_ORG,
+)
+from .installer import GitProgress
+from git import Repo
+import shutil
+import os
+import stat
 
 _SSL_CTX = ssl.create_default_context()
+CACHE_DIR = Config.VIX_TOOLS_PATH / "cache"
+CACHE_FILE = CACHE_DIR / "tool_search_cache.json"
+CACHE_EXPIRY = 3600
+MAX_RETRIES = 3
+RETRY_DELAY = 2
+
+app = typer.Typer()
+add_app = typer.Typer()
+del_app = typer.Typer()
+update_app = typer.Typer()
+search_app = typer.Typer()
+
+app.add_typer(add_app, name="add")
+app.add_typer(del_app, name="del")
+app.add_typer(update_app, name="update")
+app.add_typer(search_app, name="search")
 
 
 def _remove_readonly_tree(path: Path):
-    """shutil.rmtree with Windows .git read-only file handling."""
     def _remove_readonly(func, p, exc_info):
         os.chmod(p, stat.S_IWRITE)
         func(p)
@@ -40,9 +46,7 @@ def _remove_readonly_tree(path: Path):
 
 
 def install_tool(packname: str, parent: Path | None = None) -> Path | None:
-    """Install and build a Vix tool. Returns the compiled binary path or None."""
-    import shutil
-
+    import sys
     if parent is None:
         parent = Config.VIX_TOOLS_PATH
 
@@ -50,10 +54,10 @@ def install_tool(packname: str, parent: Path | None = None) -> Path | None:
     PACK_PATH = info.pack_path
 
     if not PACK_PATH.exists():
-        log.section(f"安装工具: {info.full_name}")
-        log.info(f"源: [link={info.git_url}]{info.git_url}[/link]")
+        typer.secho(f"[bold]安装工具: {info.full_name}[/bold]", fg="cyan")
+        typer.secho(f"源: {info.git_url}", fg="cyan")
         if info.branch_name:
-            log.info(f"分支: {info.branch_name}")
+            typer.secho(f"分支: {info.branch_name}", fg="cyan")
 
         with create_git_progress(info.full_name) as progress:
             git_progress = GitProgress(progress, info.full_name)
@@ -67,14 +71,14 @@ def install_tool(packname: str, parent: Path | None = None) -> Path | None:
             except Exception as e:
                 if PACK_PATH.exists():
                     shutil.rmtree(PACK_PATH, ignore_errors=True)
-                log.error(f"克隆失败: {e}")
+                console.print(f"[red]克隆失败: {e}[/red]")
                 return None
     else:
-        log.info(f"工具 {info.full_name} 已存在，重新编译")
+        typer.secho(f"工具 {info.full_name} 已存在，重新编译", fg="cyan")
 
     content = VIndexTool(PACK_PATH).content()
     if content is None:
-        log.error(f"{info.full_name} 缺少 vindex.toml")
+        console.print(f"[red]{info.full_name} 缺少 vindex.toml[/red]")
         return None
 
     project_name = content.get("project", {}).get("name", info.repo_name)
@@ -82,355 +86,307 @@ def install_tool(packname: str, parent: Path | None = None) -> Path | None:
     binary_name = f"{project_name}{suffix}"
     binary_path = (parent / binary_name).resolve()
 
-    log.info(f"正在编译 [cyan]{project_name}[/cyan] ...")
+    typer.secho(f"正在编译 [cyan]{project_name}[/cyan] ...", fg="cyan")
     binary_path.parent.mkdir(parents=True, exist_ok=True)
 
+    from . import cmd_build
     old_cwd = Path.cwd()
     os.chdir(str(PACK_PATH))
     try:
-        ns = argparse.Namespace()
-        build_cmd = BuildCmd.create_for_subcommand(ns, ["-o", str(binary_path)])
-        code = build_cmd.execute()
-        if code is not None and code != 0:
-            log.error(f"编译 {info.full_name} 失败")
-            return None
+        input_file, _ = cmd_build._extract_input_file([])
+        if input_file is None:
+            try:
+                import tomllib
+                with open("vindex.toml", "rb") as f:
+                    vdata = tomllib.load(f)
+                entry = vdata.get("project", {}).get("entrypoint", "main.vix")
+            except Exception:
+                entry = "main.vix"
+            cand = Path(entry).resolve()
+            if cand.exists():
+                input_file = cand
+        if input_file:
+            root_dir = Path(".").resolve()
+            temp_dir = Path(".vix/temp").resolve()
+            temp_dir.mkdir(parents=True, exist_ok=True)
+            if cmd_build._has_gcc():
+                code, obj_path = cmd_build._compile_to_obj(input_file, [], root_dir, temp_dir, silent=True)
+                if code == 0:
+                    code = cmd_build._link_with_gcc(obj_path, str(binary_path), silent=True)
+            else:
+                code = cmd_build._compile_direct(input_file, ["-o", str(binary_path)], root_dir, silent=True)
+        else:
+            code = 1
     finally:
         os.chdir(str(old_cwd))
 
     if not binary_path.exists():
-        log.error(f"编译产物 {binary_name} 未生成")
+        console.print(f"[red]编译产物 {binary_name} 未生成[/red]")
         return None
 
-    log.success(f"工具 {project_name} 已安装: {binary_path}")
+    typer.secho(f"工具 {project_name} 已安装: {binary_path}", fg="green")
     return binary_path
 
 
-class ToolCmd(Command):
-    NAME = "tool"
+@add_app.callback(invoke_without_command=True)
+def add(package: str = typer.Argument(..., help="工具包名")):
+    """安装 Vix 工具"""
+    install_tool(package)
 
-    CACHE_DIR = Config.VIX_TOOLS_PATH / "cache"
-    CACHE_FILE = CACHE_DIR / "tool_search_cache.json"
-    CACHE_EXPIRY = 3600
-    MAX_RETRIES = 3
-    RETRY_DELAY = 2
 
-    def set_parser(self, p: argparse._SubParsersAction) -> argparse.ArgumentParser:
-        parser = p.add_parser(
-            "tool",
-            help="管理 Vix 工具",
-            description="安装、搜索和管理 Vix 工具。",
-        )
-        sub = parser.add_subparsers(dest="tool_subcommand")
+@del_app.callback(invoke_without_command=True)
+def delete(package: str = typer.Argument(..., help="工具包名")):
+    """删除 Vix 工具"""
+    parent = Config.VIX_TOOLS_PATH
+    info = parse_tool_name(package, parent=parent)
+    PACK_PATH = info.pack_path
 
-        add_parser = sub.add_parser("add", help="安装 Vix 工具")
-        add_parser.add_argument("package", help="工具包名")
+    if not PACK_PATH.exists():
+        console.print(f"[red]工具 {info.full_name} 未安装[/red]")
+        raise typer.Exit(code=1)
 
-        del_parser = sub.add_parser("del", help="删除 Vix 工具")
-        del_parser.add_argument("package", help="工具包名")
+    project_name = info.repo_name
+    content = VIndexTool(PACK_PATH).content()
+    if content is not None:
+        project_name = content.get("project", {}).get("name", info.repo_name)
+    suffix = ".exe" if os.name == "nt" else ""
+    binary_path = parent / f"{project_name}{suffix}"
 
-        update_parser = sub.add_parser("update", help="更新 Vix 工具")
-        update_parser.add_argument("package", help="工具包名")
+    typer.secho(f"[bold]删除工具: {info.full_name}[/bold]", fg="cyan")
 
-        search_parser = sub.add_parser(
-            "search",
-            help="搜索可用的 Vix 工具",
-            description="从 GitHub vixlang 组织中搜索可用的 vix 工具。",
-        )
-        search_parser.add_argument(
-            "keyword", nargs="?", default="", help="搜索关键词（可选）"
-        )
-        search_parser.add_argument("--no-cache", action="store_true", help="不使用缓存")
-        search_parser.add_argument(
-            "--clear-cache", action="store_true", help="清理缓存"
-        )
-        search_parser.add_argument(
-            "--cache-status", action="store_true", help="查看缓存状态"
-        )
-        search_parser.add_argument(
-            "--sort",
-            choices=["stars", "updated", "name"],
-            default="stars",
-            help="排序方式：stars(星标数), updated(更新时间), name(名称)",
-        )
-        search_parser.add_argument(
-            "--limit", type=int, default=None, help="限制显示的工具数量"
-        )
-        return parser
+    if binary_path.exists():
+        binary_path.unlink()
+        typer.secho(f"已删除: {binary_path}", fg="green")
 
-    def execute(self):
-        sub = getattr(self.namespace, "tool_subcommand", None)
-        if sub == "add":
-            self._cmd_add()
-        elif sub == "del":
-            self._cmd_del()
-        elif sub == "update":
-            self._cmd_update()
-        elif sub == "search":
-            self._cmd_search()
-        else:
-            err_console.print(
-                "[red]未知 tool 子命令，使用 'very tool --help' 查看帮助[/red]"
-            )
+    _remove_readonly_tree(PACK_PATH)
+    typer.secho(f"已删除: {PACK_PATH}", fg="green")
 
-    def _cmd_add(self):
-        packname = getattr(self.namespace, "package", "")
-        if not packname:
-            log.error("请指定工具包名")
-            return
-        install_tool(packname)
+    for d in [PACK_PATH.parent, PACK_PATH.parent.parent]:
+        if d.exists() and not any(d.iterdir()):
+            d.rmdir()
 
-    def _cmd_del(self):
-        packname = getattr(self.namespace, "package", "")
-        if not packname:
-            log.error("请指定工具包名")
-            return
+    typer.secho(f"工具 {project_name} 已删除", fg="green")
 
-        parent = Config.VIX_TOOLS_PATH
-        info = parse_tool_name(packname, parent=parent)
-        PACK_PATH = info.pack_path
 
-        if not PACK_PATH.exists():
-            log.error(f"工具 {info.full_name} 未安装")
-            return
+@update_app.callback(invoke_without_command=True)
+def update(package: str = typer.Argument(..., help="工具包名")):
+    """更新 Vix 工具"""
+    parent = Config.VIX_TOOLS_PATH
+    info = parse_tool_name(package, parent=parent)
+    PACK_PATH = info.pack_path
 
-        # 获取 project.name 以找到编译产物
-        project_name = info.repo_name
-        content = VIndexTool(PACK_PATH).content()
-        if content is not None:
-            project_name = content.get("project", {}).get("name", info.repo_name)
-        suffix = ".exe" if sys.platform == "win32" else ""
-        binary_path = parent / f"{project_name}{suffix}"
+    if not PACK_PATH.exists():
+        typer.secho(f"工具 {info.full_name} 未安装，正在安装...", fg="cyan")
+        install_tool(package)
+        return
 
-        log.section(f"删除工具: {info.full_name}")
+    typer.secho(f"[bold]更新工具: {info.full_name}[/bold]", fg="cyan")
+    try:
+        repo = Repo(PACK_PATH)
+        origin = repo.remotes.origin
+        origin.pull()
+        typer.secho(f"已拉取最新代码: {PACK_PATH}", fg="green")
+    except Exception as e:
+        console.print(f"[red]拉取失败: {e}[/red]")
+        raise typer.Exit(code=1)
 
-        # 删除编译产物
-        if binary_path.exists():
-            binary_path.unlink()
-            log.success(f"已删除: {binary_path}")
+    typer.secho("正在重新编译...", fg="cyan")
+    binary_path = install_tool(package)
+    if binary_path is not None:
+        typer.secho(f"工具 {info.full_name} 已更新", fg="green")
 
-        # 删除源码目录
-        _remove_readonly_tree(PACK_PATH)
-        log.success(f"已删除: {PACK_PATH}")
 
-        # 清理空父目录
-        for d in [PACK_PATH.parent, PACK_PATH.parent.parent]:
-            if d.exists() and not any(d.iterdir()):
-                d.rmdir()
+# ---- Search ----
 
-        log.success(f"工具 {project_name} 已删除")
 
-    def _cmd_update(self):
-        packname = getattr(self.namespace, "package", "")
-        if not packname:
-            log.error("请指定工具包名")
-            return
+def _read_cache():
+    if not CACHE_FILE.exists():
+        return None
+    try:
+        with open(CACHE_FILE, "r", encoding="utf-8") as f:
+            data = json.load(f)
+        if time.time() - data["timestamp"] > CACHE_EXPIRY:
+            return None
+        return data["packages"]
+    except (json.JSONDecodeError, KeyError):
+        return None
 
-        parent = Config.VIX_TOOLS_PATH
-        info = parse_tool_name(packname, parent=parent)
-        PACK_PATH = info.pack_path
 
-        if not PACK_PATH.exists():
-            log.info(f"工具 {info.full_name} 未安装，正在安装...")
-            install_tool(packname)
-            return
+def _save_cache(packages):
+    try:
+        CACHE_DIR.mkdir(parents=True, exist_ok=True)
+        data = {"timestamp": time.time(), "packages": packages}
+        with open(CACHE_FILE, "w", encoding="utf-8") as f:
+            json.dump(data, f, ensure_ascii=False, indent=2)
+    except Exception:
+        pass
 
-        log.section(f"更新工具: {info.full_name}")
+
+def _fetch_github_packages():
+    packages = []
+    page = 1
+    per_page = 100
+    while True:
+        url = f"https://api.github.com/orgs/{DEFAULT_ORG}/repos?per_page={per_page}&page={page}&type=sources"
+        headers = {"Accept": "application/vnd.github.v3+json", "User-Agent": "Very-Project-Manager"}
+        req = urllib.request.Request(url, headers=headers)
+        with urllib.request.urlopen(req, timeout=10, context=_SSL_CTX) as response:
+            data = json.loads(response.read().decode("utf-8"))
+            if not data:
+                break
+            for repo in data:
+                if repo["name"].startswith(VTOOL_PREFIX):
+                    packages.append({
+                        "name": repo["name"],
+                        "description": repo["description"] or "无描述",
+                        "stars": repo["stargazers_count"],
+                        "language": repo["language"] or "Unknown",
+                        "updated": repo["updated_at"][:10],
+                        "url": repo["html_url"],
+                    })
+            if len(data) < per_page:
+                break
+            page += 1
+    packages.sort(key=lambda x: x["stars"], reverse=True)
+    return packages
+
+
+def _fetch_with_retry():
+    last_exception = None
+    for attempt in range(1, MAX_RETRIES + 1):
         try:
-            repo = Repo(PACK_PATH)
-            origin = repo.remotes.origin
-            origin.pull()
-            log.success(f"已拉取最新代码: {PACK_PATH}")
-        except Exception as e:
-            log.error(f"拉取失败: {e}")
-            return
-
-        # 重新编译
-        log.info("正在重新编译...")
-        binary_path = install_tool(packname)
-        if binary_path is not None:
-            log.success(f"工具 {info.full_name} 已更新")
-
-    # ---- Search ----
-
-    def _cmd_search(self):
-        keyword = getattr(self.namespace, "keyword", "")
-        no_cache = getattr(self.namespace, "no_cache", False)
-        clear_cache = getattr(self.namespace, "clear_cache", False)
-        cache_status = getattr(self.namespace, "cache_status", False)
-        sort_by = getattr(self.namespace, "sort", "stars")
-        limit = getattr(self.namespace, "limit", None)
-
-        if clear_cache:
-            self._clear_cache()
-            return
-        if cache_status:
-            self._show_cache_status()
-            return
-
-        log.section(f"搜索工具: {keyword if keyword else '全部'}")
-
-        try:
-            if no_cache:
-                log.info("正在从 GitHub 获取工具列表...（不使用缓存）")
-                packages = self._fetch_with_retry()
-                self.CACHE_DIR.mkdir(parents=True, exist_ok=True)
-                self._save_cache(packages)
-            else:
-                packages = self._fetch_packages_with_cache()
-
-            if not packages:
-                log.warning("未找到任何工具")
-                return
-
-            if keyword:
-                filtered = [
-                    p
-                    for p in packages
-                    if keyword.lower() in p["name"].lower()
-                    or keyword.lower() in (p.get("description") or "").lower()
-                ]
-            else:
-                filtered = packages
-
-            if not filtered:
-                log.warning(f"未找到包含 '{keyword}' 的工具")
-                return
-
-            filtered = self._sort_packages(filtered, sort_by)
-            if limit and limit > 0:
-                filtered = filtered[:limit]
-
-            self._display_results(filtered, sort_by)
-
-        except Exception as e:
-            log.error(
-                f"搜索失败\n\n[white]{str(e)}[/white]\n\n"
-                "[yellow]请检查网络连接是否正常[/yellow]"
-            )
-
-    def _sort_packages(self, packages, sort_by):
-        if sort_by == "stars":
-            return sorted(packages, key=lambda x: x["stars"], reverse=True)
-        elif sort_by == "updated":
-            return sorted(packages, key=lambda x: x["updated"], reverse=True)
-        elif sort_by == "name":
-            return sorted(packages, key=lambda x: x["name"].lower())
-        return sorted(packages, key=lambda x: x["stars"], reverse=True)
-
-    def _fetch_with_retry(self):
-        last_exception = None
-        for attempt in range(1, self.MAX_RETRIES + 1):
-            try:
-                if attempt > 1:
-                    log.info(f"重试第 {attempt - 1} 次...")
-                    time.sleep(self.RETRY_DELAY)
-                with Live(
-                    Spinner("dots", text="正在从 GitHub 获取数据..."),
-                    refresh_per_second=10,
-                    transient=True,
-                ):
-                    result = self._fetch_github_packages()
-                return result
-            except urllib.error.HTTPError as e:
-                last_exception = e
-                if e.code == 403:
-                    if attempt < self.MAX_RETRIES:
-                        wait_time = self.RETRY_DELAY * (2 ** (attempt - 1))
-                        log.warning(f"GitHub API 速率限制，{wait_time} 秒后重试...")
-                        time.sleep(wait_time)
-                        continue
-                    raise Exception("GitHub API 速率限制已用完，请稍后再试")
-                elif e.code == 404:
-                    raise Exception("GitHub API 端点不存在")
-                elif e.code >= 500:
-                    if attempt < self.MAX_RETRIES:
-                        log.warning(f"服务器错误 ({e.code})，将重试...")
-                        continue
-                    raise Exception(f"GitHub API 服务器错误 ({e.code})")
-                else:
-                    raise Exception(f"HTTP 错误: {e.code}")
-            except urllib.error.URLError as e:
-                last_exception = e
-                if attempt < self.MAX_RETRIES:
-                    log.warning("网络错误，将重试...")
+            if attempt > 1:
+                typer.secho(f"重试第 {attempt - 1} 次...", fg="yellow")
+                time.sleep(RETRY_DELAY)
+            with Live(
+                Spinner("dots", text="正在从 GitHub 获取数据..."),
+                refresh_per_second=10,
+                transient=True,
+            ):
+                result = _fetch_github_packages()
+            return result
+        except urllib.error.HTTPError as e:
+            last_exception = e
+            if e.code == 403:
+                if attempt < MAX_RETRIES:
+                    wait_time = RETRY_DELAY * (2 ** (attempt - 1))
+                    typer.secho(f"GitHub API 速率限制，{wait_time} 秒后重试...", fg="yellow")
+                    time.sleep(wait_time)
                     continue
-                raise Exception("网络错误，请检查网络连接")
-            except Exception as e:
-                raise Exception(f"请求失败: {str(e)}")
-        if last_exception:
-            raise Exception(f"经过 {self.MAX_RETRIES} 次重试后仍然失败")
-
-    def _fetch_packages_with_cache(self):
-        self.CACHE_DIR.mkdir(parents=True, exist_ok=True)
-        cached_data = self._read_cache()
-        if cached_data is not None:
-            log.info(f"使用缓存数据（{len(cached_data)} 个工具）")
-            return cached_data
-        log.info("正在从 GitHub 获取工具列表...")
-        packages = self._fetch_with_retry()
-        self._save_cache(packages)
-        return packages
-
-    def _read_cache(self):
-        if not self.CACHE_FILE.exists():
-            return None
-        try:
-            with open(self.CACHE_FILE, "r", encoding="utf-8") as f:
-                data = json.load(f)
-            if time.time() - data["timestamp"] > self.CACHE_EXPIRY:
-                return None
-            return data["packages"]
-        except (json.JSONDecodeError, KeyError):
-            return None
-        except Exception:
-            return None
-
-    def _save_cache(self, packages):
-        try:
-            data = {"timestamp": time.time(), "packages": packages}
-            with open(self.CACHE_FILE, "w", encoding="utf-8") as f:
-                json.dump(data, f, ensure_ascii=False, indent=2)
+                raise Exception("GitHub API 速率限制已用完，请稍后再试")
+            elif e.code == 404:
+                raise Exception("GitHub API 端点不存在")
+            elif e.code >= 500:
+                if attempt < MAX_RETRIES:
+                    typer.secho(f"服务器错误 ({e.code})，将重试...", fg="yellow")
+                    continue
+                raise Exception(f"GitHub API 服务器错误 ({e.code})")
+            else:
+                raise Exception(f"HTTP 错误: {e.code}")
+        except urllib.error.URLError as e:
+            last_exception = e
+            if attempt < MAX_RETRIES:
+                typer.secho("网络错误，将重试...", fg="yellow")
+                continue
+            raise Exception("网络错误，请检查网络连接")
         except Exception as e:
-            log.debug(f"保存缓存失败: {e}")
+            raise Exception(f"请求失败: {str(e)}")
+    if last_exception:
+        raise Exception(f"经过 {MAX_RETRIES} 次重试后仍然失败")
 
-    def _fetch_github_packages(self):
-        from .utils import DEFAULT_ORG
 
-        packages = []
-        page = 1
-        per_page = 100
+def _sort_packages(packages, sort_by):
+    if sort_by == "stars":
+        return sorted(packages, key=lambda x: x["stars"], reverse=True)
+    elif sort_by == "updated":
+        return sorted(packages, key=lambda x: x["updated"], reverse=True)
+    elif sort_by == "name":
+        return sorted(packages, key=lambda x: x["name"].lower())
+    return sorted(packages, key=lambda x: x["stars"], reverse=True)
 
-        while True:
-            url = f"https://api.github.com/orgs/{DEFAULT_ORG}/repos?per_page={per_page}&page={page}&type=sources"
-            headers = {
-                "Accept": "application/vnd.github.v3+json",
-                "User-Agent": "Very-Project-Manager",
-            }
-            req = urllib.request.Request(url, headers=headers)
-            with urllib.request.urlopen(req, timeout=10, context=_SSL_CTX) as response:
-                data = json.loads(response.read().decode("utf-8"))
-                if not data:
-                    break
-                for repo in data:
-                    if repo["name"].startswith(VTOOL_PREFIX):
-                        packages.append(
-                            {
-                                "name": repo["name"],
-                                "description": repo["description"] or "无描述",
-                                "stars": repo["stargazers_count"],
-                                "language": repo["language"] or "Unknown",
-                                "updated": repo["updated_at"][:10],
-                                "url": repo["html_url"],
-                            }
-                        )
-                if len(data) < per_page:
-                    break
-                page += 1
 
-        packages.sort(key=lambda x: x["stars"], reverse=True)
-        return packages
+@search_app.callback(invoke_without_command=True)
+def search(
+    keyword: str = typer.Argument(None, help="搜索关键词（可选）"),
+    no_cache: bool = typer.Option(False, "--no-cache", help="不使用缓存"),
+    clear_cache: bool = typer.Option(False, "--clear-cache", help="清理缓存"),
+    cache_status: bool = typer.Option(False, "--cache-status", help="查看缓存状态"),
+    sort: str = typer.Option("stars", "--sort", help="排序方式：stars(星标数), updated(更新时间), name(名称)"),
+    limit: int = typer.Option(None, "--limit", help="限制显示的工具数量"),
+):
+    """搜索可用的 Vix 工具"""
+    kw = keyword or ""
+    sort_by = sort
 
-    def _display_results(self, packages, sort_by="stars"):
+    if clear_cache:
+        if not CACHE_FILE.exists():
+            typer.secho("缓存文件不存在，无需清理", fg="cyan")
+            return
+        cache_size = CACHE_FILE.stat().st_size
+        CACHE_FILE.unlink()
+        typer.secho(f"缓存已清理（释放 {cache_size/1024:.2f} KB）", fg="green")
+        return
+
+    if cache_status:
+        if not CACHE_FILE.exists():
+            typer.secho("缓存文件不存在\n运行 very tool search 将自动创建缓存", fg="cyan")
+            return
+        with open(CACHE_FILE, "r", encoding="utf-8") as f:
+            cache_data = json.load(f)
+        timestamp = cache_data["timestamp"]
+        packages_count = len(cache_data["packages"])
+        cache_age = time.time() - timestamp
+        cache_size = CACHE_FILE.stat().st_size
+        remaining_time = CACHE_EXPIRY - cache_age
+        status = f"[green]有效[/green]（剩余 {int(remaining_time / 60)} 分钟）" if remaining_time > 0 else "[red]已过期[/red]"
+        cache_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(timestamp))
+        console.print()
+        console.print(f"缓存文件: [cyan]{CACHE_FILE}[/cyan]")
+        console.print(f"创建时间: [white]{cache_time}[/white]")
+        console.print(f"缓存大小: [yellow]{cache_size/1024:.2f} KB[/yellow]")
+        console.print(f"工具数量: [magenta]{packages_count}[/magenta]")
+        console.print(f"状态: {status}")
+        console.print()
+        return
+
+    typer.secho(f"[bold]搜索工具: {kw if kw else '全部'}[/bold]", fg="cyan")
+
+    try:
+        if no_cache:
+            typer.secho("正在从 GitHub 获取工具列表...（不使用缓存）", fg="cyan")
+            packages = _fetch_with_retry()
+            _save_cache(packages)
+        else:
+            cached = _read_cache()
+            if cached is not None:
+                typer.secho(f"使用缓存数据（{len(cached)} 个工具）", fg="cyan")
+                packages = cached
+            else:
+                typer.secho("正在从 GitHub 获取工具列表...", fg="cyan")
+                packages = _fetch_with_retry()
+                _save_cache(packages)
+
+        if not packages:
+            typer.secho("未找到任何工具", fg="yellow")
+            return
+
+        if kw:
+            filtered = [
+                p for p in packages
+                if kw.lower() in p["name"].lower()
+                or kw.lower() in (p.get("description") or "").lower()
+            ]
+        else:
+            filtered = packages
+
+        if not filtered:
+            typer.secho(f"未找到包含 '{kw}' 的工具", fg="yellow")
+            return
+
+        filtered = _sort_packages(filtered, sort_by)
+        if limit and limit > 0:
+            filtered = filtered[:limit]
+
         table = Table(show_header=True, header_style="bold cyan")
         table.add_column("工具名", style="green", width=25)
         table.add_column("描述", style="white", width=50)
@@ -438,7 +394,7 @@ class ToolCmd(Command):
         table.add_column("语言", style="magenta", width=12)
         table.add_column("更新时间", style="dim", width=12)
 
-        for pkg in packages:
+        for pkg in filtered:
             short_name = (
                 pkg["name"].replace(VTOOL_PREFIX, "", 1)
                 if pkg["name"].startswith(VTOOL_PREFIX)
@@ -459,47 +415,8 @@ class ToolCmd(Command):
 
         sort_labels = {"stars": "星标数", "updated": "更新时间", "name": "名称"}
         sort_label = sort_labels.get(sort_by, "星标数")
-        log.success(f"共找到 {len(packages)} 个工具（按{sort_label}排序）")
+        typer.secho(f"共找到 {len(filtered)} 个工具（按{sort_label}排序）", fg="green")
         console.print()
 
-    def _clear_cache(self):
-        log.section("清理缓存")
-        if not self.CACHE_FILE.exists():
-            log.info("缓存文件不存在，无需清理")
-            return
-        try:
-            cache_size = self.CACHE_FILE.stat().st_size
-            self.CACHE_FILE.unlink()
-            log.success(f"缓存已清理（释放 {cache_size/1024:.2f} KB）")
-        except Exception as e:
-            log.error(f"清理缓存失败: {e}")
-
-    def _show_cache_status(self):
-        log.section("缓存状态")
-        if not self.CACHE_FILE.exists():
-            log.info(
-                "缓存文件不存在\n运行 [green]very tool search[/green] 将自动创建缓存"
-            )
-            return
-        try:
-            with open(self.CACHE_FILE, "r", encoding="utf-8") as f:
-                cache_data = json.load(f)
-            timestamp = cache_data["timestamp"]
-            packages_count = len(cache_data["packages"])
-            cache_age = time.time() - timestamp
-            cache_size = self.CACHE_FILE.stat().st_size
-            remaining_time = self.CACHE_EXPIRY - cache_age
-            if remaining_time > 0:
-                status = f"[green]有效[/green]（剩余 {int(remaining_time / 60)} 分钟）"
-            else:
-                status = "[red]已过期[/red]"
-            cache_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(timestamp))
-            console.print()
-            console.print(f"缓存文件: [cyan]{self.CACHE_FILE}[/cyan]")
-            console.print(f"创建时间: [white]{cache_time}[/white]")
-            console.print(f"缓存大小: [yellow]{cache_size/1024:.2f} KB[/yellow]")
-            console.print(f"工具数量: [magenta]{packages_count}[/magenta]")
-            console.print(f"状态: {status}")
-            console.print()
-        except Exception as e:
-            log.error(f"读取缓存状态失败: {e}")
+    except Exception as e:
+        console.print(f"[red]搜索失败: {e}[/red]")
