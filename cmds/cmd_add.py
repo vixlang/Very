@@ -86,7 +86,7 @@ def add(
         typer.secho(f"已删除旧版本的包 {packinfo.full_name}", fg="green")
         console.print()
 
-    typer.secho(f"[ bold ] 添加包: {packinfo.full_name} [/bold ]", fg="cyan")
+    console.print(f"[bold cyan]添加包: {packinfo.full_name}[/bold cyan]")
     typer.secho(f"源: {packinfo.git_url}", fg="cyan")
     if packinfo.branch_name:
         typer.secho(f"分支: {packinfo.branch_name}", fg="cyan")
