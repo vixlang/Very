@@ -1,5 +1,7 @@
 # AGENTS.md — very
 
+> If ur a devloper, see [DEV.md](./DEV.md)
+
 ## Project
 
 Vix language project management & build tool. CLI name: `very`.
