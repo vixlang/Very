@@ -11,7 +11,7 @@ from cmds.cmd_list import app as list_app
 from cmds.cmd_prune import app as prune_app
 from cmds.cmd_run import app as run_app
 from cmds.cmd_search import app as search_app
-from cmds.cmd_tool import app as tool_app
+from cmds.tool import app as tool_app
 from cmds.cmd_update import app as update_app
 from cmds.utils import console
 

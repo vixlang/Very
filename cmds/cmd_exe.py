@@ -28,7 +28,7 @@ def exe(
 
     if not binary_path.exists():
         console.print(f"[cyan]工具 {tool} 未安装，正在自动安装...[/cyan]")
-        from .cmd_tool import install_tool
+        from .tool import install_tool
 
         result = install_tool(tool)
         if result is None:
