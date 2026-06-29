@@ -186,6 +186,25 @@ def delete_tool(packname: str) -> Result[None, Error]:
     return Success(None)
 
 
+def list_tools() -> Result[list[str], Error]:
+    tools_path = Config.VIX_TOOLS_PATH
+    if not tools_path.exists():
+        return Success([])
+
+    names: list[str] = []
+    for md in tools_path.iterdir():
+        if not md.is_dir():
+            continue
+        for ud in md.iterdir():
+            if not ud.is_dir():
+                continue
+            for rd in ud.iterdir():
+                if not rd.is_dir():
+                    continue
+                names.append(f"{md.name}:{ud.name}.{rd.name}")
+    return Success(names)
+
+
 def update_tool(packname: str) -> Generator[Event, None, Result[ToolInfo, Error]]:
     yield Log("info", f"更新工具: {packname}")
 
