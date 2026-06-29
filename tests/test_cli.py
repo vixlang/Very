@@ -1,6 +1,7 @@
 from pathlib import Path
 from types import SimpleNamespace
 
+from pyrsult import Success
 from typer.testing import CliRunner
 
 from cmds import cmd_exe
@@ -99,3 +100,31 @@ def test_exe_forwards_extra_args(tmp_path, monkeypatch):
 
 def test_cmd_exe_still_exports_compat_app():
     assert isinstance(cmd_exe.app, cmd_exe.typer.Typer)
+
+
+def test_exe_uses_installed_binary_path_after_auto_install(tmp_path, monkeypatch):
+    tools_dir = tmp_path / "tools"
+    tools_dir.mkdir(parents=True)
+    installed_binary = tools_dir / "vtool-pnum.exe"
+    installed_binary.write_text("", encoding="utf-8")
+
+    monkeypatch.setattr(cmd_exe.Config, "VIX_TOOLS_PATH", tools_dir)
+
+    def fake_install_tool(_tool):
+        yield cmd_exe.Log("info", "安装工具: pnum")
+        return Success(SimpleNamespace(full_name="github.com:vixlang.vtool-pnum", binary_path=installed_binary))
+
+    monkeypatch.setattr(cmd_exe, "install_tool", fake_install_tool)
+
+    Called = {}
+
+    def fake_run(args):
+        Called["args"] = args
+        return SimpleNamespace(returncode=0)
+
+    monkeypatch.setattr(cmd_exe.subprocess, "run", fake_run)
+
+    result = runner.invoke(app, ["exe", "pnum", "114"])
+
+    assert result.exit_code == 0
+    assert Called["args"] == [str(installed_binary), "114"]

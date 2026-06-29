@@ -28,14 +28,19 @@ def exe(
     if not binary_path.exists():
         log.info(f"工具 {tool} 未安装，正在自动安装...")
         gen = install_tool(tool)
-        for event in gen:
-            match event:
-                case Progress(msg, pct):
-                    log.info(f"{msg} ({pct:.0f}%)")
-                case Log(level, msg):
-                    getattr(log, level)(msg)
+        result = None
+        try:
+            while True:
+                event = next(gen)
+                match event:
+                    case Progress(msg, pct):
+                        log.info(f"{msg} ({pct:.0f}%)")
+                    case Log(level, msg):
+                        getattr(log, level)(msg)
+        except StopIteration as e:
+            result = e.value
 
-        match collect(gen):
+        match result:
             case Success(info):
                 binary_path = info.binary_path
                 log.ok(f"工具 {info.full_name} 已安装")
