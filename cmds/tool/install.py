@@ -8,11 +8,10 @@ import typer
 from git import Repo
 
 from ..installer import GitProgress
+from ..share import _get_entrypoint, log
 from ..utils import (
     Config,
     VIndexTool,
-    _get_entrypoint,
-    console,
     create_git_progress,
     parse_tool_name,
 )
@@ -30,10 +29,10 @@ def install_tool(packname: str, parent: Path | None = None) -> Path | None:
     pack_path = info.pack_path
 
     if not pack_path.exists():
-        console.print(f"[bold cyan]安装工具: {info.full_name}[/bold cyan]")
-        typer.secho(f"源: {info.git_url}", fg="cyan")
+        log.info(f"安装工具: {info.full_name}")
+        log.info(f"源: {info.git_url}")
         if info.branch_name:
-            typer.secho(f"分支: {info.branch_name}", fg="cyan")
+            log.info(f"分支: {info.branch_name}")
 
         with create_git_progress(info.full_name) as progress:
             git_progress = GitProgress(progress, info.full_name)
@@ -47,14 +46,14 @@ def install_tool(packname: str, parent: Path | None = None) -> Path | None:
             except Exception as e:
                 if pack_path.exists():
                     shutil.rmtree(pack_path, ignore_errors=True)
-                console.print(f"[red]克隆失败: {e}[/red]")
+                log.error(f"克隆失败: {e}")
                 return None
     else:
-        typer.secho(f"工具 {info.full_name} 已存在，重新编译", fg="cyan")
+        log.info(f"工具 {info.full_name} 已存在，重新编译")
 
     content = VIndexTool(pack_path).content()
     if content is None:
-        console.print(f"[red]{info.full_name} 缺少 vindex.toml[/red]")
+        log.error(f"{info.full_name} 缺少 vindex.toml")
         return None
 
     project_name = content.get("project", {}).get("name", info.repo_name)
@@ -62,7 +61,7 @@ def install_tool(packname: str, parent: Path | None = None) -> Path | None:
     binary_name = f"{project_name}{suffix}"
     binary_path = (parent / binary_name).resolve()
 
-    console.print(f"[cyan]正在编译 {project_name} ...[/cyan]")
+    log.info(f"正在编译 {project_name} ...")
     binary_path.parent.mkdir(parents=True, exist_ok=True)
 
     from .. import cmd_build
@@ -98,10 +97,10 @@ def install_tool(packname: str, parent: Path | None = None) -> Path | None:
         os.chdir(str(old_cwd))
 
     if not binary_path.exists():
-        console.print(f"[red]编译产物 {binary_name} 未生成[/red]")
+        log.error(f"编译产物 {binary_name} 未生成")
         return None
 
-    typer.secho(f"工具 {project_name} 已安装: {binary_path}", fg="green")
+    log.ok(f"工具 {project_name} 已安装: {binary_path}")
     return binary_path
 
 

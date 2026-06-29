@@ -6,7 +6,7 @@ from pathlib import Path
 import typer
 
 from . import cmd_build
-from .utils import _get_entrypoint, console
+from .share import _get_entrypoint, log
 
 app = typer.Typer()
 
@@ -21,7 +21,7 @@ def run(
     extra = ctx.args
 
     if not Path("vindex.toml").exists():
-        console.print("[red]未找到 vindex.toml，请确保在项目根目录运行此命令[/red]")
+        log.error("未找到 vindex.toml，请确保在项目根目录运行此命令")
         raise typer.Exit(code=1)
 
     output_name = cmd_build._extract_output_name(extra)[0]
@@ -30,7 +30,7 @@ def run(
     output_path = Path(output_name).resolve()
 
     if vdebug:
-        console.print("[bold cyan]▶ 编译项目...[/bold cyan]")
+        log.info("编译项目...")
 
     build_code = 1
     has_gcc = cmd_build._has_gcc()
@@ -60,19 +60,19 @@ def run(
             )
 
     if build_code != 0:
-        console.print("[red]编译失败，无法运行[/red]")
+        log.error("编译失败，无法运行")
         raise typer.Exit(code=build_code)
 
     if not output_path.exists():
-        console.print(f"[red]编译产物 {output_path.name} 未生成[/red]")
+        log.error(f"编译产物 {output_path.name} 未生成")
         raise typer.Exit(code=1)
 
     result = subprocess.run([str(output_path)] + extra)
 
     if result.returncode != 0:
-        typer.secho(f"程序以退出码 {result.returncode} 退出", fg="yellow")
+        log.warn(f"程序以退出码 {result.returncode} 退出")
 
     if not keep:
         output_path.unlink()
     elif vdebug:
-        console.print(f"[dim]保留 {output_path.name}（--keep）[/dim]")
+        log.debug(f"保留 {output_path.name}（--keep）")

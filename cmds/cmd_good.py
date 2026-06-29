@@ -5,7 +5,7 @@ from pathlib import Path
 
 import typer
 
-from .utils import _get_entrypoint, console
+from .share import _get_entrypoint, log
 
 app = typer.Typer()
 
@@ -43,7 +43,7 @@ def good(
 ):
     """检查语法和类型"""
     if not Path("vindex.toml").exists():
-        console.print("[red]未找到 vindex.toml，请确保在项目根目录运行此命令[/red]")
+        log.error("未找到 vindex.toml，请确保在项目根目录运行此命令")
         raise typer.Exit(code=1)
 
     patterns = files or []
@@ -51,17 +51,17 @@ def good(
 
     if not resolved:
         if patterns:
-            console.print(f"[red]未找到匹配的文件: {' '.join(patterns)}[/red]")
+            log.error(f"未找到匹配的文件: {' '.join(patterns)}")
         else:
             entrypoint = _get_entrypoint()
-            console.print(f"[red]未找到入口文件 {entrypoint}，请指定要检查的文件[/red]")
+            log.error(f"未找到入口文件 {entrypoint}，请指定要检查的文件")
         raise typer.Exit(code=1)
 
     has_error = False
     for i, f in enumerate(resolved):
         if i > 0:
-            console.print()
-        console.print(f"  [green]ℹ[/green]  检查: [dim]{f}[/dim]")
+            log.info("")
+        log.info(f"检查: [dim]{f}[/dim]")
         result = subprocess.run(
             ["vixc", str(f), "--check"],
             cwd=Path(".").resolve(),
@@ -70,5 +70,5 @@ def good(
             has_error = True
 
     if not has_error:
-        console.print("  [green]✔[/green]  全部通过")
+        log.ok("全部通过")
     raise typer.Exit(code=1 if has_error else 0)

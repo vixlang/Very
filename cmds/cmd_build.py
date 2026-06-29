@@ -7,7 +7,7 @@ from pathlib import Path
 
 import typer
 
-from .utils import _get_entrypoint, console
+from .share import _get_entrypoint, log
 
 app = typer.Typer()
 
@@ -63,7 +63,7 @@ def _compile_to_obj(
     obj_path = temp_dir / f"{input_file.stem}.o"
     cmd = ["vixc", str(input_file), "-obj", str(obj_path)] + vixc_flags
     if not silent:
-        console.print(f"  [cyan]ℹ[/cyan]  编译: [dim]{' '.join(cmd)}[/dim]")
+        log.info(f"编译: [dim]{' '.join(cmd)}[/dim]")
     result = subprocess.run(cmd, cwd=root_dir)
     return result.returncode, obj_path
 
@@ -74,7 +74,7 @@ def _link_with_gcc(obj_path: Path, output_name: str, silent: bool = False) -> in
         output_path = Path.cwd() / output_path
     cmd = ["gcc", str(obj_path), "-o", str(output_path)]
     if not silent:
-        console.print(f"  [cyan]ℹ[/cyan]  链接: [dim]{' '.join(cmd)}[/dim]")
+        log.info(f"链接: [dim]{' '.join(cmd)}[/dim]")
     return subprocess.run(cmd).returncode
 
 
@@ -83,7 +83,7 @@ def _compile_direct(
 ) -> int:
     cmd = ["vixc", str(input_file)] + vixc_flags
     if not silent:
-        console.print(f"  [cyan]ℹ[/cyan]  执行: [dim]{' '.join(cmd)}[/dim]")
+        log.info(f"执行: [dim]{' '.join(cmd)}[/dim]")
     result = subprocess.run(cmd, cwd=root_dir)
     return result.returncode
 
@@ -96,7 +96,7 @@ def build(
     args_list = ctx.args
 
     if not Path("vindex.toml").exists():
-        console.print("[red]未找到 vindex.toml，请确保在项目根目录运行此命令[/red]")
+        log.error("未找到 vindex.toml，请确保在项目根目录运行此命令")
         raise typer.Exit(code=1)
 
     output_name, args_list = _extract_output_name(args_list)
@@ -108,8 +108,8 @@ def build(
         entrypoint = _get_entrypoint()
         candidate = Path(entrypoint).resolve()
         if not candidate.exists():
-            console.print(
-                f"[red]未找到入口文件 {entrypoint}，请指定输入文件或确保项目根目录有该文件[/red]"
+            log.error(
+                f"未找到入口文件 {entrypoint}，请指定输入文件或确保项目根目录有该文件"
             )
             raise typer.Exit(code=1)
         input_file = candidate

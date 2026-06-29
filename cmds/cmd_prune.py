@@ -5,9 +5,10 @@ import typer
 from rich.panel import Panel
 from rich.table import Table
 
+from .share import log
+from .share import _remove_readonly
 from .utils import (
     Config,
-    _remove_readonly,
     build_dep_tree,
     console,
     iter_empty_dirs,
@@ -29,10 +30,10 @@ def prune(
     libs_path = Config.local_libs_path()
 
     if not libs_path.exists():
-        console.print("[red]包目录不存在![/red]")
+        log.error("包目录不存在!")
         raise typer.Exit(code=1)
     if not libs_path.is_dir():
-        console.print("[red]包路径不是目录![/red]")
+        log.error("包路径不是目录!")
         raise typer.Exit(code=1)
 
     removed_packages = []
@@ -44,7 +45,7 @@ def prune(
             vindex_file = repo_dir / "vindex.toml"
             if not vindex_file.exists():
                 removed_packages.append(package_name)
-                console.print(f"[bold yellow]无效包: {package_name}[/bold yellow]")
+                log.warn(f"无效包: {package_name}")
                 shutil.rmtree(repo_dir, onexc=_remove_readonly)
 
     if not invalid_only:
@@ -52,7 +53,7 @@ def prune(
             rel = empty_dir.relative_to(libs_path)
             removed_dirs.append(str(rel))
             empty_dir.rmdir()
-            console.print(f"[cyan]清理空目录: [dim]{rel}[/dim][/cyan]")
+            log.info(f"清理空目录: [dim]{rel}[/dim]")
 
     if not empty_only and not invalid_only or unused:
         unused_packages = _remove_unused(libs_path)
@@ -79,7 +80,7 @@ def _remove_unused(libs_path: Path) -> list[str]:
         legacy = list(data.get("dependencies", {}).keys())
         root_deps = list(dict.fromkeys(root_deps + legacy))
 
-    typer.secho("构建依赖树...", fg="cyan")
+    log.info("构建依赖树...")
     referenced = build_dep_tree(libs_path, root_deps)
 
     unused: list[str] = []
@@ -88,19 +89,17 @@ def _remove_unused(libs_path: Path) -> list[str]:
             unused.append(full_name)
 
     if unused:
-        console.print(
-            f"[bold yellow]发现 {len(unused)} 个孤立包: [dim]{', '.join(unused)}[/dim][/bold yellow]"
-        )
+        log.warn(f"发现 {len(unused)} 个孤立包: [dim]{', '.join(unused)}[/dim]")
         from .utils import ask_confirm
 
         if ask_confirm("是否删除这些孤立包?", default=False):
             for _, _, repo_dir, full_name in iter_package_dirs(libs_path):
                 if full_name in unused:
                     shutil.rmtree(repo_dir, onexc=_remove_readonly)
-                    typer.secho(f"已删除孤立包: {full_name}", fg="green")
+                    log.ok(f"已删除孤立包: {full_name}")
             return unused
     else:
-        typer.secho("没有孤立包", fg="cyan")
+        log.info("没有孤立包")
 
     return []
 

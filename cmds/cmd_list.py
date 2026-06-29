@@ -1,10 +1,10 @@
 from pathlib import Path
 
 import typer
-from rich.panel import Panel
 from rich.table import Table
 from rich.tree import Tree
 
+from .share import log
 from .utils import Config, console, iter_package_dirs
 
 app = typer.Typer()
@@ -18,10 +18,10 @@ def list_packages(
     libs_path = Config.local_libs_path()
 
     if not libs_path.exists():
-        console.print("[red]包目录不存在![/red]")
+        log.error("包目录不存在!")
         raise typer.Exit(code=1)
     if not libs_path.is_dir():
-        console.print("[red]包路径不是目录![/red]")
+        log.error("包路径不是目录!")
         raise typer.Exit(code=1)
 
     if tree:
@@ -53,30 +53,14 @@ def _print_list(libs_path: Path):
             table.add_row(str(total), f"[dim]{package_name}[/dim]", "[red]不可用[/red]")
 
     if total == 0:
-        console.print()
-        console.print(
-            Panel(
-                "[bold yellow]当前没有安装任何包[/bold yellow]\n\n"
-                "[dim]使用以下命令添加包:[/dim]\n"
-                "  [green]very add <包名>[/green]    - 添加一个包\n"
-                "  [green]very add --help[/green]    - 查看添加命令的帮助\n\n"
-                "[dim]示例:[/dim]\n"
-                "  [cyan]very add fexcode.vnet[/cyan]\n"
-                "  [cyan]very add @fexcode.vnet[/cyan]     (Gitee)\n",
-                title="[bold]📦 包列表[/bold]",
-                border_style="yellow",
-                padding=(1, 2),
-            )
-        )
-        console.print()
+        log.info("当前没有安装任何包")
     else:
         footer = f"[dim]共 {total} 个包, {available} 个可用, {total - available} 个不可用[/dim]"
         console.print(table)
-        console.print(footer)
+        log.info(footer)
 
 
 def _print_tree(libs_path: Path):
-    console.print("\n[bold]Vix 包目录结构[/bold]")
     tree = Tree(f"[bold blue]{libs_path}[/bold blue]", guide_style="dim cyan")
 
     master_dirs = sorted(d for d in libs_path.iterdir() if d.is_dir())

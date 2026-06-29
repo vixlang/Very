@@ -4,7 +4,7 @@ from pathlib import Path
 
 import typer
 
-from .utils import console
+from .share import log
 
 app = typer.Typer()
 
@@ -19,7 +19,7 @@ def init(
     project_path = Path(dir or project_name)
 
     if project_path.exists():
-        console.print(f"[red]目录 '{project_path}' 已存在[/red]")
+        log.error(f"目录 '{project_path}' 已存在")
         raise typer.Exit(code=1)
 
     try:
@@ -80,22 +80,8 @@ very build
 ```
 """)
 
-        typer.secho(f"成功创建项目 '{project_name}'", fg="green")
-        from rich.markdown import Markdown
-
-        console.print("\n[bold]项目结构:[/bold]")
-        console.print(Markdown(f"""
-```
-{project_name}/
-├── vindex.toml       # 项目配置
-├── main.vix          # 入口文件
-├── src/
-│   └── lib.vix       # 库模块
-├── .gitignore
-└── README.md
-```
-"""))
+        log.ok(f"成功创建项目 '{project_name}'")
 
     except Exception as e:
-        console.print(f"[red]创建项目失败: {e}[/red]")
+        log.error(f"创建项目失败: {e}")
         raise typer.Exit(code=1)

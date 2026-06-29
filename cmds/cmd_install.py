@@ -3,10 +3,10 @@ from pathlib import Path
 
 import typer
 from git import Repo
-from rich.panel import Panel
 
 from .installer import GitProgress
-from .utils import Config, console, create_git_progress, parse_pack_name
+from .share import log
+from .utils import Config, create_git_progress, parse_pack_name
 
 app = typer.Typer()
 
@@ -24,7 +24,7 @@ def install(
 
     vindex_toml_path = Path("vindex.toml")
     if not vindex_toml_path.exists():
-        console.print("[red]未找到 vindex.toml，请确保在项目根目录运行此命令[/red]")
+        log.error("未找到 vindex.toml，请确保在项目根目录运行此命令")
         raise typer.Exit(code=1)
 
     import tomllib
@@ -36,12 +36,12 @@ def install(
     legacy_deps = list(data.get("dependencies", {}).keys())
     all_deps = list(dict.fromkeys(deps + legacy_deps))
     if not all_deps:
-        typer.secho("vindex.toml 中没有声明依赖", fg="cyan")
+        log.info("vindex.toml 中没有声明依赖")
         return
 
     local_parent = Config.local_libs_path()
 
-    console.print("[bold cyan]安装依赖[/bold cyan]")
+    log.info("安装依赖")
     success = []
     skipped = []
     global_skipped = []
@@ -60,7 +60,7 @@ def install(
                 continue
 
         PACK_PATH = local_packinfo.pack_path
-        console.print(f"[cyan]正在安装 {spec} ...[/cyan]")
+        log.info(f"正在安装 {spec} ...")
         with create_git_progress(local_packinfo.full_name) as progress:
             git_progress = GitProgress(progress, local_packinfo.full_name)
             try:
@@ -78,16 +78,7 @@ def install(
 
         content = VIndexTool(PACK_PATH).content()
         if content is None:
-            console.print()
-            console.print(
-                Panel(
-                    f"[bold yellow]包缺少 vindex.toml: [white]{local_packinfo.full_name}[/white][/bold yellow]\n\n"
-                    "[dim]该包已下载但缺少必要的 vindex.toml 文件[/dim]",
-                    title="[bold]⚠ 警告[/bold]",
-                    border_style="yellow",
-                    padding=(1, 2),
-                )
-            )
+            log.warn(f"包缺少 vindex.toml: [white]{local_packinfo.full_name}[/white]")
             if ask_confirm("是否删除此不完整的包?", default=True):
                 shutil.rmtree(PACK_PATH)
                 failed.append((spec, "缺少 vindex.toml"))
@@ -96,14 +87,13 @@ def install(
         else:
             success.append(spec)
 
-    console.print()
-    console.print("[bold cyan]安装结果[/bold cyan]")
+    log.info("安装结果")
     if success:
-        typer.secho(f"成功: {', '.join(success)}", fg="green")
+        log.ok(f"成功: {', '.join(success)}")
     if skipped:
-        typer.secho(f"跳过(本地已存在): {', '.join(skipped)}", fg="cyan")
+        log.info(f"跳过(本地已存在): {', '.join(skipped)}")
     if global_skipped:
-        typer.secho(f"跳过(使用全局副本): {', '.join(global_skipped)}", fg="cyan")
+        log.info(f"跳过(使用全局副本): {', '.join(global_skipped)}")
     if failed:
         for spec, reason in failed:
-            console.print(Panel(f"[red]{spec}: {reason}[/red]", border_style="red"))
+            log.error(f"{spec}: {reason}")
