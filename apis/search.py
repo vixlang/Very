@@ -8,7 +8,6 @@ from pathlib import Path
 
 from .types import DEFAULT_ORG
 
-
 CACHE_EXPIRY = 3600
 
 
@@ -40,10 +39,7 @@ def save_cache(cache_dir: Path, cache_file: Path, packages: list[PackageInfo]):
         cache_dir.mkdir(parents=True, exist_ok=True)
         data = {
             "timestamp": time.time(),
-            "packages": [
-                {k: v for k, v in p.__dict__.items()}
-                for p in packages
-            ],
+            "packages": [{k: v for k, v in p.__dict__.items()} for p in packages],
         }
         with open(cache_file, "w", encoding="utf-8") as f:
             json.dump(data, f, ensure_ascii=False, indent=2)
@@ -56,7 +52,9 @@ def clear_cache(cache_file: Path):
         cache_file.unlink()
 
 
-def fetch_github_packages(prefix: str, include_extra: str | None = None) -> list[PackageInfo]:
+def fetch_github_packages(
+    prefix: str, include_extra: str | None = None
+) -> list[PackageInfo]:
     packages: list[PackageInfo] = []
     page = 1
     per_page = 100
@@ -144,12 +142,6 @@ def sort_packages(packages: list[PackageInfo], sort_by: str) -> list[PackageInfo
     return sorted(packages, key=lambda x: x.stars, reverse=True)
 
 
-def filter_packages(
-    packages: list[PackageInfo], keyword: str
-) -> list[PackageInfo]:
+def filter_packages(packages: list[PackageInfo], keyword: str) -> list[PackageInfo]:
     kw = keyword.lower()
-    return [
-        p
-        for p in packages
-        if kw in p.name.lower() or kw in p.description.lower()
-    ]
+    return [p for p in packages if kw in p.name.lower() or kw in p.description.lower()]

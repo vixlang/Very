@@ -140,6 +140,4 @@ def search(
     console.print()
 
     sort_labels = {"stars": "星标数", "updated": "更新时间", "name": "名称"}
-    log.ok(
-        f"共找到 {len(packages)} 个包（按{sort_labels.get(sort, '星标数')}排序）"
-    )
+    log.ok(f"共找到 {len(packages)} 个包（按{sort_labels.get(sort, '星标数')}排序）")

@@ -3,7 +3,7 @@
 from pathlib import Path
 
 import typer
-from pyrsult import Err, Ok
+from pyrsult import Failure, Success
 
 from apis import collect
 from apis.build import Progress, Log, build_project
@@ -24,8 +24,8 @@ def build(ctx: typer.Context):
                 getattr(log, level)(msg)
 
     match collect(gen):
-        case Ok(path):
+        case Success(path):
             log.ok(f"编译成功: {path}")
-        case Err(err):
+        case Failure(err):
             log.error(str(err))
             raise typer.Exit(code=1)

@@ -3,7 +3,7 @@
 from pathlib import Path
 
 import typer
-from pyrsult import Err, Ok
+from pyrsult import Failure, Success
 
 from apis.build import check_files
 
@@ -19,13 +19,13 @@ def good(
     ),
 ):
     match check_files(files or [], Path.cwd()):
-        case Ok(report):
+        case Success(report):
             if report.passed:
                 log.ok("全部通过")
             else:
                 for err in report.errors:
                     log.error(err)
             raise typer.Exit(code=0 if report.passed else 1)
-        case Err(err):
+        case Failure(err):
             log.error(str(err))
             raise typer.Exit(code=1)

@@ -3,7 +3,7 @@ from pathlib import Path
 
 import tomli_w
 
-from .types import Config, parse_pack_name
+from .types import parse_pack_name
 
 
 class VIndexTool:

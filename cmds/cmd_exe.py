@@ -4,7 +4,7 @@ import subprocess
 import sys
 
 import typer
-from pyrsult import Err, Ok
+from pyrsult import Failure, Success
 
 from apis import collect
 from apis.tool import Progress, Log, install_tool
@@ -35,10 +35,10 @@ def exe(
                     getattr(log, level)(msg)
 
         match collect(gen):
-            case Ok(info):
+            case Success(info):
                 binary_path = info.binary_path
                 log.ok(f"工具 {info.full_name} 已安装")
-            case Err(err):
+            case Failure(err):
                 log.error(str(err))
                 raise typer.Exit(code=1)
 

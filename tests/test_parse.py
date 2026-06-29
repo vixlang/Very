@@ -1,4 +1,4 @@
-from cmds.utils import parse_pack_name, parse_tool_name
+from apis.types import parse_pack_name, parse_tool_name
 
 
 def test_bare_name():

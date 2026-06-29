@@ -87,7 +87,9 @@ def build_project(
     if input_file is None:
         r = _find_entrypoint(root)
         if isinstance(r, Failure):
-            return Failure(IOError(path=str(root / "main.vix"), detail="入口文件不存在"))
+            return Failure(
+                IOError(path=str(root / "main.vix"), detail="入口文件不存在")
+            )
         input_file = r.unwrap()
 
     temp_dir = root / ".vix" / "temp"
@@ -103,20 +105,32 @@ def build_project(
         yield Log(level="info", msg=f"vixc: {' '.join(cmd)}")
         r1 = subprocess.run(cmd, cwd=root)
         if r1.returncode != 0:
-            return Failure(Compile(exit_code=r1.returncode, output=f"编译失败: 返回码 {r1.returncode}"))
+            return Failure(
+                Compile(
+                    exit_code=r1.returncode, output=f"编译失败: 返回码 {r1.returncode}"
+                )
+            )
 
         yield Progress(msg="链接", pct=0.7)
         link_cmd = ["gcc", str(obj_path), "-o", str(output_path)]
         yield Log(level="info", msg=f"gcc: {' '.join(link_cmd)}")
         r2 = subprocess.run(link_cmd, cwd=root)
         if r2.returncode != 0:
-            return Failure(Compile(exit_code=r2.returncode, output=f"链接失败: 返回码 {r2.returncode}"))
+            return Failure(
+                Compile(
+                    exit_code=r2.returncode, output=f"链接失败: 返回码 {r2.returncode}"
+                )
+            )
     else:
         cmd = ["vixc", str(input_file)] + vixc_flags
         yield Log(level="info", msg=f"vixc: {' '.join(cmd)}")
         r = subprocess.run(cmd, cwd=root)
         if r.returncode != 0:
-            return Failure(Compile(exit_code=r.returncode, output=f"编译失败: 返回码 {r.returncode}"))
+            return Failure(
+                Compile(
+                    exit_code=r.returncode, output=f"编译失败: 返回码 {r.returncode}"
+                )
+            )
 
     yield Progress(msg="完成", pct=1.0)
     return Success(output_path)
@@ -177,16 +191,24 @@ def _resolve_files(patterns: list[str], root: Path) -> list[Path]:
     return files
 
 
-def check_files(patterns: list[str], root: Path = Path.cwd()) -> Result[CheckReport, Error]:
+def check_files(
+    patterns: list[str], root: Path = Path.cwd()
+) -> Result[CheckReport, Error]:
     files = _resolve_files(patterns, root)
     if not files:
-        return Failure(NotFound(kind="file", name=", ".join(patterns) if patterns else "main.vix"))
+        return Failure(
+            NotFound(kind="file", name=", ".join(patterns) if patterns else "main.vix")
+        )
 
     errors: list[str] = []
     for f in files:
-        r = subprocess.run(["vixc", str(f), "--check"], cwd=root, capture_output=True, text=True)
+        r = subprocess.run(
+            ["vixc", str(f), "--check"], cwd=root, capture_output=True, text=True
+        )
         if r.returncode != 0:
             stderr = r.stderr.strip() or f"退出码 {r.returncode}"
             errors.append(f"{f}: {stderr}")
 
-    return Success(CheckReport(passed=len(errors) == 0, errors=errors, file_count=len(files)))
+    return Success(
+        CheckReport(passed=len(errors) == 0, errors=errors, file_count=len(files))
+    )

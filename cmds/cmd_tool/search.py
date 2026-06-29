@@ -131,7 +131,9 @@ def search(
         console.print()
 
         sort_labels = {"stars": "星标数", "updated": "更新时间", "name": "名称"}
-        log.ok(f"共找到 {len(filtered)} 个工具（按{sort_labels.get(sort_by, '星标数')}排序）")
+        log.ok(
+            f"共找到 {len(filtered)} 个工具（按{sort_labels.get(sort_by, '星标数')}排序）"
+        )
 
     except Exception as e:
         log.error(f"搜索失败: {e}")

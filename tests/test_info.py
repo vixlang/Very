@@ -2,7 +2,7 @@ from pathlib import Path
 
 import pytest
 
-from cmds.utils import PackageNameInfo, parse_pack_name
+from apis.types import PackageNameInfo, parse_pack_name
 
 
 def test_git_url():

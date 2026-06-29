@@ -5,7 +5,6 @@ from pathlib import Path
 from typing import ClassVar
 from urllib.parse import urlparse
 
-
 _VIX_HOME = Path(os.getenv("VIX_HOME", "./.vix"))
 
 

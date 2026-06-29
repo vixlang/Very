@@ -44,7 +44,9 @@ def _get_entrypoint(dir_path: Path) -> str:
     return "main.vix"
 
 
-def _clone_repo(url: str, dest: Path, branch: str | None = None) -> Result[None, GitClone]:
+def _clone_repo(
+    url: str, dest: Path, branch: str | None = None
+) -> Result[None, GitClone]:
     cmd = ["git", "clone"]
     if branch:
         cmd.extend(["-b", branch])
@@ -66,12 +68,16 @@ def _pull_repo(repo_path: Path) -> Result[None, GitPull]:
     return Success(None)
 
 
-def _compile_tool(source_dir: Path, binary_path: Path) -> Result[Path, Compile | IOError]:
+def _compile_tool(
+    source_dir: Path, binary_path: Path
+) -> Result[Path, Compile | IOError]:
     entry_name = _get_entrypoint(source_dir)
     input_file = (source_dir / entry_name).resolve()
 
     if not input_file.exists():
-        return Failure(IOError(path=str(input_file), detail=f"入口文件不存在: {input_file}"))
+        return Failure(
+            IOError(path=str(input_file), detail=f"入口文件不存在: {input_file}")
+        )
 
     binary_path.parent.mkdir(parents=True, exist_ok=True)
 

@@ -3,7 +3,7 @@
 from pathlib import Path
 
 import typer
-from pyrsult import Err, Ok
+from pyrsult import Failure, Success
 
 from apis import collect
 from apis.build import Progress, Log, build_and_run
@@ -27,10 +27,10 @@ def run(
                 getattr(log, level)(msg)
 
     match collect(gen):
-        case Ok(exit_code):
+        case Success(exit_code):
             if exit_code != 0:
                 log.warn(f"程序以退出码 {exit_code} 退出")
             raise typer.Exit(code=exit_code)
-        case Err(err):
+        case Failure(err):
             log.error(str(err))
             raise typer.Exit(code=1)

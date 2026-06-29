@@ -74,7 +74,9 @@ def iter_empty_dirs(libs_path: Path) -> Iterator[Path]:
             yield md
 
 
-def _git_clone(url: str, dest: Path, branch: str | None = None) -> Result[None, GitClone]:
+def _git_clone(
+    url: str, dest: Path, branch: str | None = None
+) -> Result[None, GitClone]:
     cmd = ["git", "clone", url, str(dest)]
     if branch:
         cmd.extend(["-b", branch])
@@ -91,10 +93,14 @@ def _git_clone(url: str, dest: Path, branch: str | None = None) -> Result[None, 
 
 def _git_pull(path: Path) -> Result[bool, GitPull]:
     try:
-        result = subprocess.run(["git", "-C", str(path), "pull"], capture_output=True, text=True)
+        result = subprocess.run(
+            ["git", "-C", str(path), "pull"], capture_output=True, text=True
+        )
         if result.returncode != 0:
             return Failure(GitPull(path=str(path), detail=result.stderr.strip()))
-        already_up_to_date = "Already up to date" in result.stdout or "已经是最新的" in result.stdout
+        already_up_to_date = (
+            "Already up to date" in result.stdout or "已经是最新的" in result.stdout
+        )
         return Success(not already_up_to_date)
     except FileNotFoundError:
         return Failure(GitPull(path=str(path), detail="未找到 git 命令"))
@@ -110,14 +116,16 @@ def list_packages() -> Result[list[PackageInfo], Error]:
     packages: list[PackageInfo] = []
     for _, user_dir, repo_dir, full_name in iter_package_dirs(libs_path):
         vindex_file = repo_dir / "vindex.toml"
-        packages.append(PackageInfo(
-            host=repo_dir.parent.parent.name,
-            user=user_dir.name,
-            repo=repo_dir.name,
-            full_name=full_name,
-            path=repo_dir,
-            has_vindex=vindex_file.exists(),
-        ))
+        packages.append(
+            PackageInfo(
+                host=repo_dir.parent.parent.name,
+                user=user_dir.name,
+                repo=repo_dir.name,
+                full_name=full_name,
+                path=repo_dir,
+                has_vindex=vindex_file.exists(),
+            )
+        )
     return Success(packages)
 
 
@@ -201,28 +209,32 @@ def install_package(
 
     if dest.exists():
         yield Log("info", f"包已存在: {info.full_name}")
-        return Success(PackageInfo(
-            host=info.git_master,
-            user=info.user_name,
-            repo=info.repo_name,
-            full_name=info.full_name,
-            path=dest,
-            has_vindex=(dest / "vindex.toml").exists(),
-        ))
+        return Success(
+            PackageInfo(
+                host=info.git_master,
+                user=info.user_name,
+                repo=info.repo_name,
+                full_name=info.full_name,
+                path=dest,
+                has_vindex=(dest / "vindex.toml").exists(),
+            )
+        )
 
     if not force_local:
         global_info = parse_pack_name(spec, parent=global_path)
         global_dest = global_info.pack_path
         if global_dest.exists():
             yield Log("info", f"包已存在于全局: {global_info.full_name}")
-            return Success(PackageInfo(
-                host=global_info.git_master,
-                user=global_info.user_name,
-                repo=global_info.repo_name,
-                full_name=global_info.full_name,
-                path=global_dest,
-                has_vindex=(global_dest / "vindex.toml").exists(),
-            ))
+            return Success(
+                PackageInfo(
+                    host=global_info.git_master,
+                    user=global_info.user_name,
+                    repo=global_info.repo_name,
+                    full_name=global_info.full_name,
+                    path=global_dest,
+                    has_vindex=(global_dest / "vindex.toml").exists(),
+                )
+            )
 
     libs_path.mkdir(parents=True, exist_ok=True)
     (libs_path / info.git_master).mkdir(parents=True, exist_ok=True)
@@ -258,7 +270,9 @@ def install_package(
             yield Log("info", f"安装 {len(deps)} 个依赖...")
             for dep_spec in deps:
                 yield Progress(f"安装依赖 {dep_spec}")
-                dep_result = yield from install_package(dep_spec, force_local=force_local)
+                dep_result = yield from install_package(
+                    dep_spec, force_local=force_local
+                )
                 if isinstance(dep_result, Failure):
                     yield Log("error", f"依赖 {dep_spec} 安装失败: {dep_result.err()}")
 
