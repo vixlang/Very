@@ -95,3 +95,7 @@ def test_exe_forwards_extra_args(tmp_path, monkeypatch):
 
     assert result.exit_code == 0
     assert Called["args"] == [str(tool_path), "114"]
+
+
+def test_cmd_exe_still_exports_compat_app():
+    assert isinstance(cmd_exe.app, cmd_exe.typer.Typer)
