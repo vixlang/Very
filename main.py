@@ -3,7 +3,7 @@ import typer
 from cmds.cmd_add import app as add_app
 from cmds.cmd_build import app as build_app
 from cmds.cmd_del import app as del_app
-from cmds.cmd_exe import app as exe_app
+from cmds.cmd_exe import exe
 from cmds.cmd_good import app as good_app
 from cmds.cmd_init import app as init_app
 from cmds.cmd_install import app as install_app
@@ -19,7 +19,6 @@ app = typer.Typer(name="very", help="Vix 项目管理与构建工具")
 app.add_typer(add_app, name="add")
 app.add_typer(build_app, name="build")
 app.add_typer(del_app, name="del")
-app.add_typer(exe_app, name="exe")
 app.add_typer(good_app, name="good")
 app.add_typer(init_app, name="init")
 app.add_typer(install_app, name="install")
@@ -29,6 +28,13 @@ app.add_typer(run_app, name="run")
 app.add_typer(search_app, name="search")
 app.add_typer(tool_app, name="tool")
 app.add_typer(update_app, name="update")
+app.command(
+    "exe",
+    context_settings=dict(
+        ignore_unknown_options=True,
+        allow_extra_args=True,
+    ),
+)(exe)
 
 
 def _version_callback(value: bool):

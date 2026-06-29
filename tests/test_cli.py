@@ -1,5 +1,9 @@
+from pathlib import Path
+from types import SimpleNamespace
+
 from typer.testing import CliRunner
 
+from cmds import cmd_exe
 from main import app
 
 runner = CliRunner()
@@ -70,3 +74,24 @@ def test_exe_help():
 def test_exe_treats_tool_name_as_argument():
     result = runner.invoke(app, ["exe", "pnum"])
     assert "No such command 'pnum'" not in result.output
+
+
+def test_exe_forwards_extra_args(tmp_path, monkeypatch):
+    tool_path = tmp_path / "tools" / "pnum.exe"
+    tool_path.parent.mkdir(parents=True)
+    tool_path.write_text("", encoding="utf-8")
+
+    monkeypatch.setattr(cmd_exe.Config, "VIX_TOOLS_PATH", tool_path.parent)
+
+    Called = {}
+
+    def fake_run(args):
+        Called["args"] = args
+        return SimpleNamespace(returncode=0)
+
+    monkeypatch.setattr(cmd_exe.subprocess, "run", fake_run)
+
+    result = runner.invoke(app, ["exe", "pnum", "114"])
+
+    assert result.exit_code == 0
+    assert Called["args"] == [str(tool_path), "114"]

@@ -4,9 +4,8 @@ from pyrsult import Result
 
 
 def collect(gen: Generator) -> Result:
-    for _ in gen:
-        pass
     try:
-        gen.send(None)
+        while True:
+            next(gen)
     except StopIteration as e:
         return e.value
