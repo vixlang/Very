@@ -1,24 +1,28 @@
-import typer
 import shutil
-import os
-import stat
 from pathlib import Path
+
+import typer
 from rich.panel import Panel
 from rich.table import Table
-from .utils import Config, console, iter_package_dirs, iter_empty_dirs, build_dep_tree
+
+from .utils import (
+    Config,
+    _remove_readonly,
+    build_dep_tree,
+    console,
+    iter_empty_dirs,
+    iter_package_dirs,
+)
 
 app = typer.Typer()
-
-
-def _remove_readonly(func, path, exc_info):
-    os.chmod(path, stat.S_IWRITE)
-    func(path)
 
 
 @app.callback(invoke_without_command=True)
 def prune(
     empty_only: bool = typer.Option(False, "--empty-only", help="只删除空目录"),
-    invalid_only: bool = typer.Option(False, "--invalid-only", help="只删除没有vindex.toml的包"),
+    invalid_only: bool = typer.Option(
+        False, "--invalid-only", help="只删除没有vindex.toml的包"
+    ),
     unused: bool = typer.Option(False, "--unused", help="只删除不被引用的孤立包"),
 ):
     """删除没有vindex.toml的包"""
@@ -53,7 +57,14 @@ def prune(
     if not empty_only and not invalid_only or unused:
         unused_packages = _remove_unused(libs_path)
 
-    _print_summary(removed_packages, removed_dirs, unused_packages, empty_only, invalid_only, unused)
+    _print_summary(
+        removed_packages,
+        removed_dirs,
+        unused_packages,
+        empty_only,
+        invalid_only,
+        unused,
+    )
 
 
 def _remove_unused(libs_path: Path) -> list[str]:
@@ -61,6 +72,7 @@ def _remove_unused(libs_path: Path) -> list[str]:
     root_deps: list[str] = []
     if vindex_path.exists():
         import tomllib
+
         with open(vindex_path, "rb") as f:
             data = tomllib.load(f)
         root_deps = data.get("project", {}).get("deps", [])
@@ -76,8 +88,11 @@ def _remove_unused(libs_path: Path) -> list[str]:
             unused.append(full_name)
 
     if unused:
-        console.print(f"[bold yellow]发现 {len(unused)} 个孤立包: [dim]{', '.join(unused)}[/dim][/bold yellow]")
+        console.print(
+            f"[bold yellow]发现 {len(unused)} 个孤立包: [dim]{', '.join(unused)}[/dim][/bold yellow]"
+        )
         from .utils import ask_confirm
+
         if ask_confirm("是否删除这些孤立包?", default=False):
             for _, _, repo_dir, full_name in iter_package_dirs(libs_path):
                 if full_name in unused:
@@ -90,7 +105,9 @@ def _remove_unused(libs_path: Path) -> list[str]:
     return []
 
 
-def _print_summary(packages, dirs, unused, empty_only: bool, invalid_only: bool, unused_only: bool):
+def _print_summary(
+    packages, dirs, unused, empty_only: bool, invalid_only: bool, unused_only: bool
+):
     table = Table(show_header=False, box=None, padding=(0, 2))
     table.add_column("label", style="cyan")
     table.add_column("value", style="bold white")

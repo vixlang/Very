@@ -1,16 +1,11 @@
-import typer
 import shutil
-import os
-import stat
-from .utils import parse_pack_name, ask_confirm, Config, console
+
+import typer
 from rich.panel import Panel
 
+from .utils import Config, _remove_readonly, ask_confirm, console, parse_pack_name
+
 app = typer.Typer()
-
-
-def _remove_readonly(func, path, exc_info):
-    os.chmod(path, stat.S_IWRITE)
-    func(path)
 
 
 @app.callback(invoke_without_command=True)

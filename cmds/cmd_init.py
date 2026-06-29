@@ -1,7 +1,9 @@
 """very init — 初始化新项目"""
 
-import typer
 from pathlib import Path
+
+import typer
+
 from .utils import console
 
 app = typer.Typer()
@@ -23,7 +25,7 @@ def init(
     try:
         project_path.mkdir(parents=True)
 
-        (project_path / "vindex.toml").write_text(f'''[project]
+        (project_path / "vindex.toml").write_text(f"""[project]
 name = "{project_name}"
 version = "0.1.0"
 description = ""
@@ -31,24 +33,24 @@ authors = []
 edition = "2024"
 
 deps = []
-''')
+""")
 
         (project_path / "src").mkdir()
 
-        (project_path / "src" / "lib.vix").write_text('''pub fn greet() {
+        (project_path / "src" / "lib.vix").write_text("""pub fn greet() {
     print("Hello from src/lib.vix!")
 }
-''')
+""")
 
-        (project_path / "main.vix").write_text('''import "src/lib.vix"
+        (project_path / "main.vix").write_text("""import "src/lib.vix"
 
 fn main(): i32 {
     greet()
     return 0
 }
-''')
+""")
 
-        (project_path / ".gitignore").write_text('''# Vix
+        (project_path / ".gitignore").write_text("""# Vix
 *.o
 *.out
 *.exe
@@ -65,9 +67,9 @@ target/
 # OS
 .DS_Store
 Thumbs.db
-''')
+""")
 
-        (project_path / "README.md").write_text(f'''# {project_name}
+        (project_path / "README.md").write_text(f"""# {project_name}
 
 Vix 项目
 
@@ -76,10 +78,11 @@ Vix 项目
 ```bash
 very build
 ```
-''')
+""")
 
         typer.secho(f"成功创建项目 '{project_name}'", fg="green")
         from rich.markdown import Markdown
+
         console.print("\n[bold]项目结构:[/bold]")
         console.print(Markdown(f"""
 ```

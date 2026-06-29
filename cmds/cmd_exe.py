@@ -1,7 +1,9 @@
 """very exe — execute compiled Vix tools."""
 
-import typer
 import subprocess
+
+import typer
+
 from .utils import Config, console
 
 app = typer.Typer()
@@ -14,6 +16,7 @@ def exe(
 ):
     """执行 Vix 工具"""
     import sys
+
     extra = ctx.args
 
     if not tool:
@@ -26,6 +29,7 @@ def exe(
     if not binary_path.exists():
         console.print(f"[cyan]工具 {tool} 未安装，正在自动安装...[/cyan]")
         from .cmd_tool import install_tool
+
         result = install_tool(tool)
         if result is None:
             typer.secho(f"无法安装工具 {tool}", fg="red")

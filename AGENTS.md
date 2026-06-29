@@ -5,8 +5,8 @@
 Vix language project management & build tool. CLI name: `very`.
 
 - **Python** >=3.13, **uv**-managed, setuptools build
-- Entrypoint: `main.py` → `main:main` (installed as `very` via `pyproject.toml` `[project.scripts]`)
-- Commands: `add`, `del`, `list`, `prune`, `init`, `search`, `install`, `update`, `run`, `exe`, `tool` — registered in `cmds/__init__.py`, all extend `Command` from `cmds/base.py`
+- Entrypoint: `main.py` → `main:entry` (installed as `very` via `pyproject.toml` `[project.scripts]`)
+- Commands: `add`, `del`, `list`, `prune`, `init`, `search`, `install`, `update`, `run`, `exe`, `tool` — registered in `main.py` via typer subcommands
 
 ## Commands
 
@@ -49,7 +49,7 @@ ruff check .       # linter (dev dep)
 black .            # formatter (dev dep)
 ```
 
-Test framework: `pytest` (dev dep). Run: `uv run pytest tests/` (212 tests, all passing).
+Test framework: `pytest` (dev dep).
 
 ## Config & paths
 
@@ -66,7 +66,7 @@ Test framework: `pytest` (dev dep). Run: `uv run pytest tests/` (212 tests, all 
 - Runtime: `gitpython`, `rich`, `tqdm`, `tomli-w`
 - Dev: `ruff`, `black`
 
-PyPI index defaults to Tsinghua mirror (commented out in `pyproject.toml`; uncomment `[[tool.uv.index]]` to enable).
+PyPI index defaults to Tsinghua mirror (enabled in `pyproject.toml`).
 
 `uv.lock` is gitignored — run `uv lock` to regenerate.
 

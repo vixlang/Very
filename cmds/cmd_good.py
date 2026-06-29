@@ -1,21 +1,13 @@
 """very good — 检查 Vix 语法和类型"""
 
-import typer
 import subprocess
-import tomllib
 from pathlib import Path
-from .utils import console
+
+import typer
+
+from .utils import _get_entrypoint, console
 
 app = typer.Typer()
-
-
-def _get_entrypoint() -> str:
-    try:
-        with open("vindex.toml", "rb") as f:
-            data = tomllib.load(f)
-        return data.get("project", {}).get("entrypoint", "main.vix")
-    except Exception:
-        return "main.vix"
 
 
 def _resolve_files(patterns: list[str]) -> list[Path]:
@@ -45,7 +37,9 @@ def _resolve_files(patterns: list[str]) -> list[Path]:
 
 @app.callback(invoke_without_command=True)
 def good(
-    files: list[str] = typer.Argument(None, help="要检查的 .vix 文件或目录 (支持通配符, 默认: main.vix)"),
+    files: list[str] = typer.Argument(
+        None, help="要检查的 .vix 文件或目录 (支持通配符, 默认: main.vix)"
+    ),
 ):
     """检查语法和类型"""
     if not Path("vindex.toml").exists():

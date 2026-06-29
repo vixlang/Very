@@ -1,10 +1,12 @@
 """very run — 编译并运行 Vix 项目"""
 
-import typer
 import subprocess
 from pathlib import Path
+
+import typer
+
 from . import cmd_build
-from .utils import console
+from .utils import _get_entrypoint, console
 
 app = typer.Typer()
 
@@ -34,13 +36,7 @@ def run(
     has_gcc = cmd_build._has_gcc()
     input_file, vixc_flags = cmd_build._extract_input_file(extra)
     if input_file is None:
-        try:
-            import tomllib
-            with open("vindex.toml", "rb") as f:
-                vindex_data = tomllib.load(f)
-            entrypoint = vindex_data.get("project", {}).get("entrypoint", "main.vix")
-        except Exception:
-            entrypoint = "main.vix"
+        entrypoint = _get_entrypoint()
         candidate = Path(entrypoint).resolve()
         if candidate.exists():
             input_file = candidate
@@ -49,13 +45,19 @@ def run(
         temp_dir = Path(".vix/temp").resolve()
         temp_dir.mkdir(parents=True, exist_ok=True)
         if has_gcc:
-            code, obj_path = cmd_build._compile_to_obj(input_file, vixc_flags, root_dir, temp_dir, silent=not vdebug)
+            code, obj_path = cmd_build._compile_to_obj(
+                input_file, vixc_flags, root_dir, temp_dir, silent=not vdebug
+            )
             if code != 0:
                 build_code = code
             else:
-                build_code = cmd_build._link_with_gcc(obj_path, output_name, silent=not vdebug)
+                build_code = cmd_build._link_with_gcc(
+                    obj_path, output_name, silent=not vdebug
+                )
         else:
-            build_code = cmd_build._compile_direct(input_file, vixc_flags, root_dir, silent=not vdebug)
+            build_code = cmd_build._compile_direct(
+                input_file, vixc_flags, root_dir, silent=not vdebug
+            )
 
     if build_code != 0:
         console.print("[red]编译失败，无法运行[/red]")

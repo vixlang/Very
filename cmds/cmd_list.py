@@ -1,8 +1,10 @@
-import typer
 from pathlib import Path
+
+import typer
+from rich.panel import Panel
 from rich.table import Table
 from rich.tree import Tree
-from rich.panel import Panel
+
 from .utils import Config, console, iter_package_dirs
 
 app = typer.Typer()

@@ -1,4 +1,5 @@
 import typer
+
 from cmds.cmd_add import app as add_app
 from cmds.cmd_build import app as build_app
 from cmds.cmd_del import app as del_app
@@ -33,8 +34,10 @@ app.add_typer(update_app, name="update")
 def _version_callback(value: bool):
     if value:
         from importlib.metadata import version as get_version
+
         ver = get_version("very")
         from rich.panel import Panel
+
         text = f"[bold cyan]Very[/bold cyan] [bold green]v{ver}[/bold green]\nVix [yellow]项目管理与构建工具[/yellow]"
         console.print(Panel(text, border_style="cyan"))
         raise typer.Exit()
@@ -42,7 +45,9 @@ def _version_callback(value: bool):
 
 @app.callback()
 def main(
-    version: bool = typer.Option(False, "--version", "-v", help="显示版本号", callback=_version_callback),
+    version: bool = typer.Option(
+        False, "--version", "-v", help="显示版本号", callback=_version_callback
+    ),
 ):
     pass
 

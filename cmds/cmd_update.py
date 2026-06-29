@@ -1,13 +1,17 @@
-import typer
 from pathlib import Path
-from .utils import parse_pack_name, Config, console, iter_package_dirs
-from .installer import PackageInstaller
+
+import typer
 from git import Repo
+
+from .installer import PackageInstaller
+from .utils import Config, console, iter_package_dirs, parse_pack_name
 
 app = typer.Typer()
 
 
-def _update_one(display_name: str, repo_path: Path, libs_parent: Path, visited: set[str]):
+def _update_one(
+    display_name: str, repo_path: Path, libs_parent: Path, visited: set[str]
+):
     if repo_path.exists() and display_name in visited:
         return
     visited.add(display_name)
@@ -30,13 +34,16 @@ def _update_one(display_name: str, repo_path: Path, libs_parent: Path, visited: 
     vindex_path = repo_path / "vindex.toml"
     if vindex_path.exists():
         import tomllib
+
         with open(vindex_path, "rb") as f:
             data = tomllib.load(f)
         deps = data.get("project", {}).get("deps", [])
         legacy = list(data.get("dependencies", {}).keys())
         transitive = list(dict.fromkeys(deps + legacy))
         if transitive:
-            console.print(f"  [cyan]└ 检测到 {len(transitive)} 个传递依赖: [dim]{', '.join(transitive)}[/dim][/cyan]")
+            console.print(
+                f"  [cyan]└ 检测到 {len(transitive)} 个传递依赖: [dim]{', '.join(transitive)}[/dim][/cyan]"
+            )
             for dep_spec in transitive:
                 if dep_spec in visited:
                     continue
@@ -44,17 +51,23 @@ def _update_one(display_name: str, repo_path: Path, libs_parent: Path, visited: 
                 if dep_info.pack_path.exists():
                     _update_one(dep_spec, dep_info.pack_path, libs_parent, visited)
                 else:
-                    console.print(f"    [cyan]⊳ {dep_spec} 尚未安装, 正在安装...[/cyan]")
+                    console.print(
+                        f"    [cyan]⊳ {dep_spec} 尚未安装, 正在安装...[/cyan]"
+                    )
                     result = PackageInstaller.install_one(dep_spec, parent=libs_parent)
                     if result.success:
                         typer.secho(f"    ✔ {dep_spec}", fg="green")
-                        dep_path = parse_pack_name(dep_spec, parent=libs_parent).pack_path
+                        dep_path = parse_pack_name(
+                            dep_spec, parent=libs_parent
+                        ).pack_path
                         _update_one(dep_spec, dep_path, libs_parent, visited)
 
 
 @app.callback(invoke_without_command=True)
 def update(
-    package: str = typer.Argument(None, help="要更新的包名（不指定则更新所有已安装的包）"),
+    package: str = typer.Argument(
+        None, help="要更新的包名（不指定则更新所有已安装的包）"
+    ),
 ):
     """更新已安装的包"""
     packname = package

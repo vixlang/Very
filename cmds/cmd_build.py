@@ -1,12 +1,13 @@
 """very build — 编译 Vix 项目"""
 
-import typer
+import shutil
 import subprocess
 import sys
-import shutil
-import tomllib
 from pathlib import Path
-from .utils import console
+
+import typer
+
+from .utils import _get_entrypoint, console
 
 app = typer.Typer()
 
@@ -37,6 +38,8 @@ def _extract_input_file(args: list[str]) -> tuple[Path | None, list[str]]:
 
 
 def _default_output_name() -> str:
+    import tomllib
+
     try:
         with open("vindex.toml", "rb") as f:
             data = tomllib.load(f)
@@ -50,7 +53,13 @@ def _has_gcc() -> bool:
     return shutil.which("gcc") is not None
 
 
-def _compile_to_obj(input_file: Path, vixc_flags: list[str], root_dir: Path, temp_dir: Path, silent: bool = False) -> tuple[int, Path]:
+def _compile_to_obj(
+    input_file: Path,
+    vixc_flags: list[str],
+    root_dir: Path,
+    temp_dir: Path,
+    silent: bool = False,
+) -> tuple[int, Path]:
     obj_path = temp_dir / f"{input_file.stem}.o"
     cmd = ["vixc", str(input_file), "-obj", str(obj_path)] + vixc_flags
     if not silent:
@@ -69,7 +78,9 @@ def _link_with_gcc(obj_path: Path, output_name: str, silent: bool = False) -> in
     return subprocess.run(cmd).returncode
 
 
-def _compile_direct(input_file: Path, vixc_flags: list[str], root_dir: Path, silent: bool = False) -> int:
+def _compile_direct(
+    input_file: Path, vixc_flags: list[str], root_dir: Path, silent: bool = False
+) -> int:
     cmd = ["vixc", str(input_file)] + vixc_flags
     if not silent:
         console.print(f"  [cyan]ℹ[/cyan]  执行: [dim]{' '.join(cmd)}[/dim]")
@@ -94,15 +105,12 @@ def build(
 
     input_file, vixc_flags = _extract_input_file(args_list)
     if input_file is None:
-        try:
-            with open("vindex.toml", "rb") as f:
-                vindex_data = tomllib.load(f)
-            entrypoint = vindex_data.get("project", {}).get("entrypoint", "main.vix")
-        except Exception:
-            entrypoint = "main.vix"
+        entrypoint = _get_entrypoint()
         candidate = Path(entrypoint).resolve()
         if not candidate.exists():
-            console.print(f"[red]未找到入口文件 {entrypoint}，请指定输入文件或确保项目根目录有该文件[/red]")
+            console.print(
+                f"[red]未找到入口文件 {entrypoint}，请指定输入文件或确保项目根目录有该文件[/red]"
+            )
             raise typer.Exit(code=1)
         input_file = candidate
 

@@ -1,8 +1,10 @@
+import shutil
 from dataclasses import dataclass
 from pathlib import Path
+
 from git import Repo, remote
-import shutil
-from .utils import VIndexTool, parse_pack_name, create_git_progress
+
+from .utils import VIndexTool, create_git_progress, parse_pack_name
 
 
 class GitProgress(remote.RemoteProgress):
@@ -60,7 +62,9 @@ class PackageInstaller:
         pack_path = packinfo.pack_path
 
         if pack_path.exists():
-            return InstallResult(spec=spec, success=False, skipped=True, reason="已存在")
+            return InstallResult(
+                spec=spec, success=False, skipped=True, reason="已存在"
+            )
 
         with create_git_progress(packinfo.full_name) as progress:
             git_progress = GitProgress(progress, packinfo.full_name)
@@ -78,13 +82,18 @@ class PackageInstaller:
 
         content = VIndexTool(pack_path).content()
         if content is None:
-            return InstallResult(spec=spec, success=False, reason="缺少 vindex.toml", no_vindex=True)
+            return InstallResult(
+                spec=spec, success=False, reason="缺少 vindex.toml", no_vindex=True
+            )
 
         return InstallResult(spec=spec, success=True)
 
     @staticmethod
-    def install_transitive_deps(parent: Path, specs: list[str], visited: set[str] | None = None, depth: int = 0):
+    def install_transitive_deps(
+        parent: Path, specs: list[str], visited: set[str] | None = None, depth: int = 0
+    ):
         import tomllib
+
         if visited is None:
             visited = set()
         for spec in specs:
@@ -104,4 +113,6 @@ class PackageInstaller:
                 sub_legacy = list(data.get("dependencies", {}).keys())
                 sub = list(dict.fromkeys(sub_deps + sub_legacy))
                 if sub:
-                    PackageInstaller.install_transitive_deps(parent, sub, visited, depth + 1)
+                    PackageInstaller.install_transitive_deps(
+                        parent, sub, visited, depth + 1
+                    )

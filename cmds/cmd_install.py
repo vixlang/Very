@@ -1,17 +1,21 @@
-import typer
-from pathlib import Path
 import shutil
-from rich.panel import Panel
-from .utils import parse_pack_name, Config, console, create_git_progress
-from .installer import GitProgress
+from pathlib import Path
+
+import typer
 from git import Repo
+from rich.panel import Panel
+
+from .installer import GitProgress
+from .utils import Config, console, create_git_progress, parse_pack_name
 
 app = typer.Typer()
 
 
 @app.callback(invoke_without_command=True)
 def install(
-    local: bool = typer.Option(False, "-l", "--local", help="强制在项目 .vix 目录下载（即使全局已存在）"),
+    local: bool = typer.Option(
+        False, "-l", "--local", help="强制在项目 .vix 目录下载（即使全局已存在）"
+    ),
 ):
     """安装 vindex.toml 中声明的所有依赖"""
     from .utils import VIndexTool, ask_confirm

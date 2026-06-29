@@ -8,7 +8,7 @@ packages = ["cmds"]
 
 [project]
 name = "very"
-version = "0.25.2"
+version = "0.26.0"
 description = "Vix 项目管理与构建工具"
 readme = "README.md"
 requires-python = ">=3.13"
@@ -24,7 +24,7 @@ dependencies = [
 url = "https://pypi.tuna.tsinghua.edu.cn/simple/"
 default = true
 
-# 中国大陆用户可取消以下注释以使用清华镜像源：
+# 中国大陆用户可取消以下注释以使用清华镜像源（当前已启用）：
 # [[tool.uv.index]]
 # url = "https://pypi.tuna.tsinghua.edu.cn/simple/"
 # default = true
@@ -39,6 +39,9 @@ dev = [
     "pytest>=8.3.0",
     "pytest-cov>=7.1.0",
 ]
+
+[tool.mypy]
+exclude = ["build/"]
 
 [tool.black]
 target-version = ["py313"]

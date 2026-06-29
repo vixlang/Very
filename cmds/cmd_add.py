@@ -1,25 +1,32 @@
-import typer
-from pathlib import Path
 import shutil
-import os
-import stat
+from pathlib import Path
+
+import typer
 from rich.panel import Panel
-from .utils import parse_pack_name, ask_confirm, console, Config, add_dep_to_vindex, err_console
+
 from .installer import PackageInstaller
+from .utils import (
+    Config,
+    _remove_readonly,
+    add_dep_to_vindex,
+    ask_confirm,
+    console,
+    err_console,
+    parse_pack_name,
+)
 
 app = typer.Typer()
-
-
-def _remove_readonly(func, path, exc_info):
-    os.chmod(path, stat.S_IWRITE)
-    func(path)
 
 
 @app.callback(invoke_without_command=True)
 def add(
     package: str = typer.Argument(..., help="需要添加的包名"),
-    global_: bool = typer.Option(False, "-g", "--global", help="全局安装到 VIX_HOME 目录"),
-    local: bool = typer.Option(False, "-l", "--local", help="强制在项目 .vix 目录下载（即使全局已存在）"),
+    global_: bool = typer.Option(
+        False, "-g", "--global", help="全局安装到 VIX_HOME 目录"
+    ),
+    local: bool = typer.Option(
+        False, "-l", "--local", help="强制在项目 .vix 目录下载（即使全局已存在）"
+    ),
 ):
     """添加包(需要git)"""
     packname = package
@@ -56,20 +63,22 @@ def add(
         if global_packinfo.pack_path.exists():
             added = add_dep_to_vindex(packname)
             if added:
-                typer.secho(f"已添加 {packinfo.full_name} 到 deps (使用全局副本)", fg="green")
+                typer.secho(
+                    f"已添加 {packinfo.full_name} 到 deps (使用全局副本)", fg="green"
+                )
             else:
                 typer.secho(f"deps 中已存在: {packname}", fg="cyan")
             return
 
-    PACK_PATH = packinfo.pack_path
+    pack_path = packinfo.pack_path
 
-    if PACK_PATH.exists():
+    if pack_path.exists():
         console.print()
         console.print(
             Panel(
                 f"[bold yellow]包已存在: [white]{packinfo.full_name}[/white][/bold yellow]\n\n"
                 f"[dim]该包已经安装在以下位置:[/dim]\n"
-                f"  [cyan]{PACK_PATH}[/cyan]\n\n"
+                f"  [cyan]{pack_path}[/cyan]\n\n"
                 f"[yellow]操作选项:[/yellow]",
                 title="[bold]⚠ 提示[/bold]",
                 border_style="yellow",
@@ -82,7 +91,7 @@ def add(
             console.print()
             return
 
-        shutil.rmtree(PACK_PATH, onexc=_remove_readonly)
+        shutil.rmtree(pack_path, onexc=_remove_readonly)
         typer.secho(f"已删除旧版本的包 {packinfo.full_name}", fg="green")
         console.print()
 
@@ -107,10 +116,12 @@ def add(
                 )
             )
             if ask_confirm("是否删除此不完整的包?", default=True):
-                shutil.rmtree(PACK_PATH, onexc=_remove_readonly)
+                shutil.rmtree(pack_path, onexc=_remove_readonly)
                 typer.secho(f"已删除不完整的包 {packinfo.full_name}", fg="yellow")
             else:
-                typer.secho(f"已保留包 {packinfo.full_name}，但它可能无法使用", fg="yellow")
+                typer.secho(
+                    f"已保留包 {packinfo.full_name}，但它可能无法使用", fg="yellow"
+                )
             console.print()
         else:
             console.print(
@@ -129,17 +140,20 @@ def add(
         if added:
             typer.secho(f"已添加 {packname} 到 deps", fg="green")
 
-    if not global_install:
-        vindex_path = PACK_PATH / "vindex.toml"
+        vindex_path = pack_path / "vindex.toml"
         if vindex_path.exists():
             import tomllib
+
             with open(vindex_path, "rb") as f:
                 vindex_data = tomllib.load(f)
             pkg_deps = vindex_data.get("project", {}).get("deps", [])
             pkg_legacy = list(vindex_data.get("dependencies", {}).keys())
             transitive = list(dict.fromkeys(pkg_deps + pkg_legacy))
             if transitive:
-                typer.secho(f"检测到 {len(transitive)} 个传递依赖: {', '.join(transitive)}", fg="cyan")
+                typer.secho(
+                    f"检测到 {len(transitive)} 个传递依赖: {', '.join(transitive)}",
+                    fg="cyan",
+                )
                 PackageInstaller.install_transitive_deps(parent, transitive)
 
     typer.secho(f"包 {packinfo.full_name} 添加成功", fg="green")
