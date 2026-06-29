@@ -60,3 +60,8 @@ def test_tool_update_help():
 def test_tool_search_help():
     result = runner.invoke(app, ["tool", "search", "--help"])
     assert result.exit_code == 0
+
+
+def test_exe_help():
+    result = runner.invoke(app, ["exe", "--help"])
+    assert result.exit_code == 0

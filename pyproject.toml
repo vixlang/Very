@@ -8,26 +8,24 @@ namespaces = false
 
 [project]
 name = "very"
-version = "0.33.0"
+version = "0.34.3"
 description = "Vix 项目管理与构建工具"
 readme = "README.md"
-requires-python = ">=3.13"
+requires-python = ">=3.12"
 dependencies = [
     "pyrsult>=0.0.2",
     "rich>=15.0.0",
     "tqdm>=4.67.3",
     "tomli-w>=1.2.0",
     "typer>=0.15",
+    "click>=8.1",
 ]
 
 [[tool.uv.index]]
 url = "https://pypi.tuna.tsinghua.edu.cn/simple/"
 default = true
 
-# 中国大陆用户可取消以下注释以使用清华镜像源（当前已启用）：
-# [[tool.uv.index]]
-# url = "https://pypi.tuna.tsinghua.edu.cn/simple/"
-# default = true
+
 
 [project.scripts]
 very = "main:entry"
