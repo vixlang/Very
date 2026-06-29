@@ -12,7 +12,7 @@ class _Logger:
         _console.print(f"[white on grey]DEBUG[/]\t[dim]{msg}[/dim]")
 
     def ok(self, msg: str) -> None:
-        happy_word = choice("NICE", "GOOD", "GREAT", "WON", "YEAH")
+        happy_word = choice(["NICE", "GOOD", "GREAT", "WON", "YEAH"])
         _console.print(f"[white on green]{happy_word}![/]\t[green]{msg}[/green]")
 
     def info(self, msg: str) -> None:
@@ -22,7 +22,7 @@ class _Logger:
         _console.print(f"[white on yellow]WARN![/]\t[yellow]{msg}[/yellow]")
 
     def error(self, msg: str) -> None:
-        happy_word = choice("FUCK", "SHIT", "OHNO")
+        happy_word = choice(["FUCK", "SHIT", "OHNO"])
         _err_console.print(f"[white on red]{happy_word}![/]\t[red]{msg}[/red]")
 
 
