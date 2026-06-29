@@ -244,7 +244,7 @@ def install_package(
 
     clone_result = _git_clone(info.git_url, dest, info.branch_name)
     if isinstance(clone_result, Failure):
-        yield Log("error", clone_result.err().detail)
+        yield Log("error", clone_result.error.detail)
         return clone_result
 
     yield Log("info", "克隆完成")
@@ -274,7 +274,7 @@ def install_package(
                     dep_spec, force_local=force_local
                 )
                 if isinstance(dep_result, Failure):
-                    yield Log("error", f"依赖 {dep_spec} 安装失败: {dep_result.err()}")
+                    yield Log("error", f"依赖 {dep_spec} 安装失败: {dep_result.error}")
 
     return Success(pack_info)
 
@@ -341,6 +341,6 @@ def install_dependencies(
         if isinstance(result, Success):
             installed.append(result.unwrap())
         else:
-            yield Log("error", f"依赖 {dep_spec} 安装失败: {result.err()}")
+            yield Log("error", f"依赖 {dep_spec} 安装失败: {result.error}")
 
     return Success(installed)
