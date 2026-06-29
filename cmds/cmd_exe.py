@@ -16,10 +16,13 @@ from .share import log
 app = typer.Typer(name="exe", help="执行已编译的 Vix 工具")
 
 
-@app.command(context_settings=dict(
-    ignore_unknown_options=True,
-    allow_extra_args=True,
-))
+@app.callback(
+    invoke_without_command=True,
+    context_settings=dict(
+        ignore_unknown_options=True,
+        allow_extra_args=True,
+    ),
+)
 def exe(tool: str, ctx: typer.Context):
     extra = list(ctx.args)
     suffix = ".exe" if sys.platform == "win32" else ""

@@ -65,3 +65,8 @@ def test_tool_search_help():
 def test_exe_help():
     result = runner.invoke(app, ["exe", "--help"])
     assert result.exit_code == 0
+
+
+def test_exe_treats_tool_name_as_argument():
+    result = runner.invoke(app, ["exe", "pnum"])
+    assert "No such command 'pnum'" not in result.output
