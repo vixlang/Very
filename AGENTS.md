@@ -42,14 +42,13 @@ very exe <tool> [args...]            # find and run a compiled tool (auto-instal
 | `@fexcode.vnet` | `gitee.com/fexcode/vnet` (`@` prefix → gitee) |
 | `vnet` (bare name) | `github.com/vixlang/vlib-vnet` |
 
-## Lint & format
+## Lint & format & test
 
 ```bash
 ruff check .       # linter (dev dep)
 black .            # formatter (dev dep)
+pytest tests/ -v   # 29 tests (dev dep: pytest)
 ```
-
-Test framework: `pytest` (dev dep).
 
 ## Config & paths
 
