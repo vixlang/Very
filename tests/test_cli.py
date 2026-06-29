@@ -1,4 +1,3 @@
-from pathlib import Path
 from types import SimpleNamespace
 
 from pyrsult import Success
@@ -64,6 +63,11 @@ def test_tool_update_help():
 
 def test_tool_search_help():
     result = runner.invoke(app, ["tool", "search", "--help"])
+    assert result.exit_code == 0
+
+
+def test_tool_prune_help():
+    result = runner.invoke(app, ["tool", "prune", "--help"])
     assert result.exit_code == 0
 
 

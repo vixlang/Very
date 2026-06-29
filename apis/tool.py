@@ -1,8 +1,11 @@
+import os
 import shutil
+import stat
 import subprocess
 import sys
-from collections.abc import Generator
-from dataclasses import dataclass
+import tomllib
+from collections.abc import Generator, Iterator
+from dataclasses import dataclass, field
 from pathlib import Path
 
 from pyrsult import Result, Success, Failure
@@ -242,3 +245,92 @@ def update_tool(packname: str) -> Generator[Event, None, Result[ToolInfo, Error]
     yield Log("ok", f"工具 {info.full_name} 已更新")
 
     return Success(ToolInfo(full_name=info.full_name, binary_path=binary_path))
+
+
+@dataclass
+class ToolPruneReport:
+    removed_invalid: list[str] = field(default_factory=list)
+    removed_empty: list[str] = field(default_factory=list)
+    removed_orphaned: list[str] = field(default_factory=list)
+
+
+def _remove_readonly(func, path, exc_info):
+    os.chmod(path, stat.S_IWRITE)
+    func(path)
+
+
+def _iter_tool_source_dirs(tools_path: Path) -> Iterator[tuple[Path, Path, Path, str]]:
+    for host_dir in tools_path.iterdir():
+        if not host_dir.is_dir():
+            continue
+        for user_dir in host_dir.iterdir():
+            if not user_dir.is_dir():
+                continue
+            for repo_dir in user_dir.iterdir():
+                if not repo_dir.is_dir():
+                    continue
+                yield host_dir, user_dir, repo_dir, f"{host_dir.name}:{user_dir.name}.{repo_dir.name}"
+
+
+def _iter_tool_empty_dirs(tools_path: Path) -> Iterator[Path]:
+    for host_dir in sorted(tools_path.iterdir(), reverse=True):
+        if not host_dir.is_dir():
+            continue
+        for user_dir in sorted(host_dir.iterdir(), reverse=True):
+            if not user_dir.is_dir():
+                continue
+            for repo_dir in sorted(user_dir.iterdir(), reverse=True):
+                if not repo_dir.is_dir():
+                    continue
+                if not any(repo_dir.iterdir()):
+                    yield repo_dir
+            if not any(user_dir.iterdir()):
+                yield user_dir
+        if not any(host_dir.iterdir()):
+            yield host_dir
+
+
+def prune_tools(
+    empty_only: bool = False,
+    invalid_only: bool = False,
+) -> Result[ToolPruneReport, Error]:
+    tools_path = Config.VIX_TOOLS_PATH
+    if not tools_path.exists():
+        return Failure(NotFound("tools_path", str(tools_path)))
+
+    report = ToolPruneReport()
+
+    if not empty_only:
+        for _, _, repo_dir, full_name in _iter_tool_source_dirs(tools_path):
+            has_vindex = (repo_dir / "vindex.toml").exists()
+            if not has_vindex:
+                report.removed_invalid.append(full_name)
+                shutil.rmtree(repo_dir, onexc=_remove_readonly)
+
+    if not invalid_only:
+        for empty_dir in _iter_tool_empty_dirs(tools_path):
+            rel = str(empty_dir.relative_to(tools_path))
+            report.removed_empty.append(rel)
+            empty_dir.rmdir()
+
+    should_find_orphaned = not empty_only and not invalid_only
+    if should_find_orphaned:
+        expected: set[str] = set()
+        for _, _, repo_dir, _ in _iter_tool_source_dirs(tools_path):
+            vindex_path = repo_dir / "vindex.toml"
+            if vindex_path.exists():
+                with open(vindex_path, "rb") as f:
+                    data = tomllib.load(f)
+                proj_name = data.get("project", {}).get("name", repo_dir.name)
+            else:
+                proj_name = repo_dir.name
+            expected.add(proj_name)
+
+        for entry in tools_path.iterdir():
+            if entry.is_dir():
+                continue
+            if entry.stem not in expected:
+                report.removed_orphaned.append(entry.name)
+                entry.unlink()
+
+    return Success(report)
