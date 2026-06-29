@@ -1,24 +1,34 @@
 import typer
 from pyrsult import Success, Failure
+from rich.console import Console
 from apis.tool import update_tool, list_tools
 from apis._event import Progress, Log
 from cmds.share import log
 
 
 update_app = typer.Typer()
+_console = Console()
 
 
 def _update_one(package: str):
     gen = update_tool(package)
-    try:
-        while True:
-            match next(gen):
-                case Log(level, msg):
-                    getattr(log, level, log.info)(msg)
-                case Progress(msg, _):
-                    log.info(f"  {msg}")
-    except StopIteration:
-        pass
+    result = None
+    with _console.status("", spinner="dots") as status:
+        try:
+            while True:
+                match next(gen):
+                    case Log(level, msg):
+                        getattr(log, level, log.info)(msg)
+                    case Progress(msg, _):
+                        status.update(msg)
+        except StopIteration as e:
+            result = e.value
+
+    match result:
+        case Success(info):
+            log.ok(f"工具已更新: {info.binary_path}")
+        case Failure(err):
+            log.error(str(err))
 
 
 @update_app.callback(invoke_without_command=True)

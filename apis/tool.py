@@ -133,7 +133,7 @@ def install_tool(packname: str) -> Generator[Event, None, Result[ToolInfo, Error
         if clone_result.is_failure():
             if pack_path.exists():
                 shutil.rmtree(pack_path, ignore_errors=True)
-            return Failure(clone_result.error())
+            return Failure(clone_result.unwrap_err())
         yield Progress("仓库克隆完成", 100)
     else:
         yield Log("info", f"工具 {info.full_name} 已存在，重新编译")
@@ -152,7 +152,7 @@ def install_tool(packname: str) -> Generator[Event, None, Result[ToolInfo, Error
     yield Progress("编译中...", 50)
     compile_result = _compile_tool(pack_path, binary_path)
     if compile_result.is_failure():
-        return Failure(compile_result.error())
+        return Failure(compile_result.unwrap_err())
 
     yield Progress("编译完成", 100)
     yield Log("ok", f"工具 {project_name} 已安装: {binary_path}")
@@ -220,7 +220,7 @@ def update_tool(packname: str) -> Generator[Event, None, Result[ToolInfo, Error]
     yield Progress("拉取中...", 30)
     pull_result = _pull_repo(pack_path)
     if pull_result.is_failure():
-        return Failure(pull_result.error())
+        return Failure(pull_result.unwrap_err())
 
     vindex = VIndexTool(pack_path)
     content = vindex.content()
@@ -236,7 +236,7 @@ def update_tool(packname: str) -> Generator[Event, None, Result[ToolInfo, Error]
     yield Progress("编译中...", 60)
     compile_result = _compile_tool(pack_path, binary_path)
     if compile_result.is_failure():
-        return Failure(compile_result.error())
+        return Failure(compile_result.unwrap_err())
 
     yield Progress("更新完成", 100)
     yield Log("ok", f"工具 {info.full_name} 已更新")
