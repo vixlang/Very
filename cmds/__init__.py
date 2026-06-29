@@ -9,6 +9,6 @@ from . import cmd_list as cmd_list
 from . import cmd_prune as cmd_prune
 from . import cmd_run as cmd_run
 from . import cmd_search as cmd_search
-from . import tool as tool
+from . import cmd_tool as tool
 from . import cmd_update as cmd_update
 from .utils import console as console

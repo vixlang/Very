@@ -1,5 +1,3 @@
-"""very search — 搜索可用的包"""
-
 import json
 import time
 from datetime import datetime
@@ -7,14 +5,23 @@ from datetime import datetime
 import typer
 from rich.table import Table
 
+from apis.search import (
+    CACHE_EXPIRY,
+    clear_cache,
+    fetch_github_packages,
+    fetch_with_retry,
+    filter_packages,
+    read_cache,
+    save_cache,
+    sort_packages,
+)
+from apis.types import Config, VLIB_PREFIX
+
 from .share import log
-from .share import _fetch_github_packages, _fetch_with_retry, _read_cache
-from .share import _save_cache, _sort_packages
-from .utils import VLIB_PREFIX, Config, console
+from .utils import console
 
 CACHE_DIR = Config.VIX_HOME / "cache"
 CACHE_FILE = CACHE_DIR / "search_cache.json"
-CACHE_EXPIRY = 3600
 
 app = typer.Typer()
 
@@ -25,7 +32,7 @@ def search(
     no_cache: bool = typer.Option(
         False, "--no-cache", help="不使用缓存，强制从 GitHub 获取最新数据"
     ),
-    clear_cache: bool = typer.Option(False, "--clear-cache", help="清理本地缓存文件"),
+    clear_: bool = typer.Option(False, "--clear-cache", help="清理本地缓存文件"),
     cache_status: bool = typer.Option(False, "--cache-status", help="查看缓存状态信息"),
     sort: str = typer.Option(
         "stars",
@@ -35,16 +42,13 @@ def search(
     limit: int = typer.Option(None, "--limit", help="限制显示的包数量"),
 ):
     """搜索可用的包"""
-    kw = keyword or ""
-    sort_by = sort
-
-    if clear_cache:
+    if clear_:
         if not CACHE_FILE.exists():
             log.info("缓存文件不存在，无需清理")
             return
-        cache_size = CACHE_FILE.stat().st_size
-        CACHE_FILE.unlink()
-        log.ok(f"缓存已清理（释放 {cache_size/1024:.2f} KB）")
+        size = CACHE_FILE.stat().st_size
+        clear_cache(CACHE_FILE)
+        log.ok(f"缓存已清理（释放 {size / 1024:.2f} KB）")
         return
 
     if cache_status:
@@ -53,97 +57,89 @@ def search(
             log.info("运行 very search 将自动创建缓存")
             return
         with open(CACHE_FILE, "r", encoding="utf-8") as f:
-            cache_data = json.load(f)
-        timestamp = cache_data["timestamp"]
-        packages_count = len(cache_data["packages"])
-        cache_age = time.time() - timestamp
-        cache_size = CACHE_FILE.stat().st_size
-        remaining_time = CACHE_EXPIRY - cache_age
+            raw = json.load(f)
+        ts = raw["timestamp"]
+        count = len(raw["packages"])
+        age = time.time() - ts
+        remaining = CACHE_EXPIRY - age
         status = (
-            f"[green]有效[/green]（剩余 {int(remaining_time / 60)} 分钟）"
-            if remaining_time > 0
+            f"[green]有效[/green]（剩余 {int(remaining / 60)} 分钟）"
+            if remaining > 0
             else "[red]已过期[/red]"
         )
-        cache_time = datetime.fromtimestamp(timestamp).strftime("%Y-%m-%d %H:%M:%S")
+        cache_time = datetime.fromtimestamp(ts).strftime("%Y-%m-%d %H:%M:%S")
+        cache_size = CACHE_FILE.stat().st_size
         log.info(f"缓存文件: [cyan]{CACHE_FILE}[/cyan]")
         log.info(f"创建时间: [white]{cache_time}[/white]")
-        log.info(f"缓存大小: [yellow]{cache_size/1024:.2f} KB[/yellow]")
-        log.info(f"包数量: [magenta]{packages_count}[/magenta]")
+        log.info(f"缓存大小: [yellow]{cache_size / 1024:.2f} KB[/yellow]")
+        log.info(f"包数量: [magenta]{count}[/magenta]")
         log.info(f"状态: {status}")
         return
-
-    log.info(f"搜索包: {kw if kw else '全部'}")
 
     try:
         if no_cache:
             log.info("正在从 GitHub 获取包列表...（不使用缓存）")
-            packages = _fetch_with_retry(
-                lambda: _fetch_github_packages(VLIB_PREFIX, "ver")
+            packages = fetch_with_retry(
+                lambda: fetch_github_packages(VLIB_PREFIX, "ver")
             )
-            _save_cache(CACHE_DIR, CACHE_FILE, packages)
+            save_cache(CACHE_DIR, CACHE_FILE, packages)
         else:
-            cached = _read_cache(CACHE_FILE, CACHE_EXPIRY)
+            cached = read_cache(CACHE_FILE, CACHE_EXPIRY)
             if cached is not None:
                 log.info(f"使用缓存数据（{len(cached)} 个包）")
                 packages = cached
             else:
                 log.info("正在从 GitHub 获取包列表...")
-                packages = _fetch_with_retry(
-                    lambda: _fetch_github_packages(VLIB_PREFIX, "ver")
+                packages = fetch_with_retry(
+                    lambda: fetch_github_packages(VLIB_PREFIX, "ver")
                 )
-                _save_cache(CACHE_DIR, CACHE_FILE, packages)
-
-        if not packages:
-            log.warn("未找到任何包")
-            return
-
-        if kw:
-            filtered = [
-                p
-                for p in packages
-                if kw.lower() in p["name"].lower()
-                or kw.lower() in (p.get("description") or "").lower()
-            ]
-        else:
-            filtered = packages
-
-        if not filtered:
-            log.warn(f"未找到包含 '{kw}' 的包")
-            return
-
-        filtered = _sort_packages(filtered, sort_by)
-        if limit and limit > 0:
-            filtered = filtered[:limit]
-
-        table = Table(show_header=True, header_style="bold cyan")
-        table.add_column("包名", style="green", width=25)
-        table.add_column("描述", style="white", width=50)
-        table.add_column("星标", justify="right", style="yellow", width=6)
-        table.add_column("语言", style="magenta", width=12)
-        table.add_column("更新时间", style="dim", width=12)
-
-        for pkg in filtered:
-            short_name = (
-                pkg["name"].replace(VLIB_PREFIX, "", 1)
-                if pkg["name"].startswith(VLIB_PREFIX)
-                else pkg["name"]
-            )
-            desc = pkg.get("description") or ""
-            table.add_row(
-                short_name,
-                desc[:47] + "..." if len(desc) > 50 else desc,
-                str(pkg["stars"]),
-                pkg["language"],
-                pkg["updated"],
-            )
-
-        console.print()
-        console.print(table)
-        console.print()
-
-        sort_labels = {"stars": "星标数", "updated": "更新时间", "name": "名称"}
-        sort_label = sort_labels.get(sort_by, "星标数")
-        log.ok(f"共找到 {len(filtered)} 个包（按{sort_label}排序）")
-
+                save_cache(CACHE_DIR, CACHE_FILE, packages)
     except Exception as e:
         log.error(f"搜索失败: {e}")
+        raise typer.Exit(code=1)
+
+    if not packages:
+        log.warn("未找到任何包")
+        return
+
+    if keyword:
+        packages = filter_packages(packages, keyword)
+
+    if not packages:
+        log.warn(f"未找到包含 '{keyword}' 的包")
+        return
+
+    packages = sort_packages(packages, sort)
+    if limit:
+        packages = packages[:limit]
+
+    table = Table(show_header=True, header_style="bold cyan")
+    table.add_column("包名", style="green", width=25)
+    table.add_column("描述", style="white", width=50)
+    table.add_column("星标", justify="right", style="yellow", width=6)
+    table.add_column("语言", style="magenta", width=12)
+    table.add_column("更新时间", style="dim", width=12)
+
+    for pkg in packages:
+        short_name = (
+            pkg.name.replace(VLIB_PREFIX, "", 1)
+            if pkg.name.startswith(VLIB_PREFIX)
+            else pkg.name
+        )
+        desc = pkg.description
+        table.add_row(
+            short_name,
+            desc[:47] + "..." if len(desc) > 50 else desc,
+            str(pkg.stars),
+            pkg.language,
+            pkg.updated,
+        )
+
+    console.print()
+    console.print(table)
+    console.print()
+
+    sort_labels = {"stars": "星标数", "updated": "更新时间", "name": "名称"}
+    log.ok(
+        f"共找到 {len(packages)} 个包（按{sort_labels.get(sort, '星标数')}排序）"
+    )

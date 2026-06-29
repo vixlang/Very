@@ -1,12 +1,14 @@
 """very run — 编译并运行 Vix 项目"""
 
-import subprocess
 from pathlib import Path
 
 import typer
+from pyrsult import Err, Ok
 
-from . import cmd_build
-from .share import _get_entrypoint, log
+from apis import collect
+from apis.build import Progress, Log, build_and_run
+
+from .share import log
 
 app = typer.Typer()
 
@@ -15,64 +17,20 @@ app = typer.Typer()
 def run(
     ctx: typer.Context,
     keep: bool = typer.Option(False, "-k", "--keep", help="运行后保留生成的可执行文件"),
-    vdebug: bool = typer.Option(False, "-v", "--vdebug", help="显示编译调试信息"),
 ):
-    """编译并运行 Vix 项目"""
-    extra = ctx.args
+    gen = build_and_run(Path.cwd(), ctx.args, keep=keep)
+    for event in gen:
+        match event:
+            case Progress(msg, pct):
+                log.info(f"{msg} ({pct:.0f}%)")
+            case Log(level, msg):
+                getattr(log, level)(msg)
 
-    if not Path("vindex.toml").exists():
-        log.error("未找到 vindex.toml，请确保在项目根目录运行此命令")
-        raise typer.Exit(code=1)
-
-    output_name = cmd_build._extract_output_name(extra)[0]
-    if output_name is None:
-        output_name = cmd_build._default_output_name()
-    output_path = Path(output_name).resolve()
-
-    if vdebug:
-        log.info("编译项目...")
-
-    build_code = 1
-    has_gcc = cmd_build._has_gcc()
-    input_file, vixc_flags = cmd_build._extract_input_file(extra)
-    if input_file is None:
-        entrypoint = _get_entrypoint()
-        candidate = Path(entrypoint).resolve()
-        if candidate.exists():
-            input_file = candidate
-    if input_file:
-        root_dir = Path(".").resolve()
-        temp_dir = Path(".vix/temp").resolve()
-        temp_dir.mkdir(parents=True, exist_ok=True)
-        if has_gcc:
-            code, obj_path = cmd_build._compile_to_obj(
-                input_file, vixc_flags, root_dir, temp_dir, silent=not vdebug
-            )
-            if code != 0:
-                build_code = code
-            else:
-                build_code = cmd_build._link_with_gcc(
-                    obj_path, output_name, silent=not vdebug
-                )
-        else:
-            build_code = cmd_build._compile_direct(
-                input_file, vixc_flags, root_dir, silent=not vdebug
-            )
-
-    if build_code != 0:
-        log.error("编译失败，无法运行")
-        raise typer.Exit(code=build_code)
-
-    if not output_path.exists():
-        log.error(f"编译产物 {output_path.name} 未生成")
-        raise typer.Exit(code=1)
-
-    result = subprocess.run([str(output_path)] + extra)
-
-    if result.returncode != 0:
-        log.warn(f"程序以退出码 {result.returncode} 退出")
-
-    if not keep:
-        output_path.unlink()
-    elif vdebug:
-        log.debug(f"保留 {output_path.name}（--keep）")
+    match collect(gen):
+        case Ok(exit_code):
+            if exit_code != 0:
+                log.warn(f"程序以退出码 {exit_code} 退出")
+            raise typer.Exit(code=exit_code)
+        case Err(err):
+            log.error(str(err))
+            raise typer.Exit(code=1)
