@@ -17,9 +17,7 @@ def scaffold_project(name: str, dir_path: str | None = None) -> Result[Path, Err
             f"[project]\n"
             f'name = "{name}"\n'
             f'version = "0.1.0"\n'
-            f'description = ""\n'
-            f"authors = []\n"
-            f'edition = "2024"\n'
+f"authors = []\n"
             f"deps = []\n"
         )
 
