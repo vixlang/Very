@@ -14,6 +14,7 @@ from cmds.cmd_search import app as search_app
 from cmds.cmd_std import app as std_app
 from cmds.cmd_tool import app as tool_app
 from cmds.cmd_update import app as update_app
+from cmds.cmd_what import app as what_app
 from cmds.utils import console
 
 app = typer.Typer(name="very", help="Vix 项目管理与构建工具")
@@ -30,6 +31,7 @@ app.add_typer(search_app, name="search")
 app.add_typer(std_app, name="std")
 app.add_typer(tool_app, name="tool")
 app.add_typer(update_app, name="update")
+app.add_typer(what_app, name="what")
 app.command(
     "exe",
     context_settings=dict(

@@ -345,3 +345,37 @@ def install_dependencies(
             yield Log("error", f"依赖 {dep_spec} 安装失败: {result.error}")
 
     return Success(installed)
+
+
+def read_package_readme(spec: str) -> Result[str, Error]:
+    paths_to_check = [Config.local_libs_path(), Config.VIX_LIBS_PATH]
+    pack_path = None
+
+    for libs_path in paths_to_check:
+        info = parse_pack_name(spec, parent=libs_path)
+        if info.pack_path.exists():
+            pack_path = info.pack_path
+            break
+
+    if pack_path is None:
+        return Failure(NotFound("package", spec))
+
+    vindex_file = pack_path / "vindex.toml"
+    readme_name = "README.md"
+    if vindex_file.exists():
+        with open(vindex_file, "rb") as f:
+            data = tomllib.load(f)
+        readme_name = (
+            data.get("project", {}).get("readme") or readme_name
+        )
+
+    readme_path = pack_path / readme_name
+    if not readme_path.exists():
+        return Failure(NotFound("readme", str(readme_path)))
+
+    try:
+        content = readme_path.read_text(encoding="utf-8")
+    except OSError as e:
+        return Failure(IOError(path=str(readme_path), detail=str(e)))
+
+    return Success(content)
