@@ -15,7 +15,7 @@ default = true
 
 [project]
 name = "very"
-version = "0.36.2"
+version = "0.37.0"
 description = "Vix 项目管理与构建工具"
 readme = "README.md"
 requires-python = ">=3.12"
@@ -43,6 +43,8 @@ dev = [
 
 [tool.mypy]
 exclude = ["build/"]
+ignore_missing_imports = true
+check_untyped_defs = true
 
 [tool.black]
 target-version = ["py313"]

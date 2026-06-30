@@ -11,6 +11,7 @@ from cmds.cmd_list import app as list_app
 from cmds.cmd_prune import app as prune_app
 from cmds.cmd_run import app as run_app
 from cmds.cmd_search import app as search_app
+from cmds.cmd_std import app as std_app
 from cmds.cmd_tool import app as tool_app
 from cmds.cmd_update import app as update_app
 from cmds.utils import console
@@ -26,6 +27,7 @@ app.add_typer(list_app, name="list")
 app.add_typer(prune_app, name="prune")
 app.add_typer(run_app, name="run")
 app.add_typer(search_app, name="search")
+app.add_typer(std_app, name="std")
 app.add_typer(tool_app, name="tool")
 app.add_typer(update_app, name="update")
 app.command(

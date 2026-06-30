@@ -296,6 +296,7 @@ def update_package(spec: str) -> Generator[Event, None, Result[UpdateInfo, Error
     if pack_path is None:
         return Failure(NotFound("package", spec))
 
+    assert full_name is not None
     yield Progress(f"拉取 {full_name}")
     pull_result = _git_pull(pack_path)
     if isinstance(pull_result, Failure):

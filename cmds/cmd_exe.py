@@ -6,7 +6,6 @@ import sys
 import typer
 from pyrsult import Failure, Success
 
-from apis import collect
 from apis.tool import Progress, Log, install_tool
 from apis.types import Config
 

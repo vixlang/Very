@@ -97,7 +97,7 @@ def fetch_github_packages(
 
 
 def fetch_with_retry(fetch_fn, max_retries=3, retry_delay=2):
-    last_exception = None
+    last_exception: Exception | None = None
     for attempt in range(1, max_retries + 1):
         try:
             if attempt > 1:

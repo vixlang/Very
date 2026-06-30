@@ -7,6 +7,7 @@ import tomllib
 from collections.abc import Generator, Iterator
 from dataclasses import dataclass, field
 from pathlib import Path
+from typing import cast
 
 from pyrsult import Result, Success, Failure
 
@@ -146,7 +147,7 @@ def install_tool(packname: str) -> Generator[Event, None, Result[ToolInfo, Error
     if content is None:
         return Failure(Validation(reason=f"{info.full_name} 缺少 vindex.toml"))
 
-    project_name = content.get("project", {}).get("name", info.repo_name)
+    project_name = cast(dict, content.get("project", {})).get("name", info.repo_name)
     suffix = ".exe" if sys.platform == "win32" else ""
     binary_name = f"{project_name}{suffix}"
     binary_path = (Config.VIX_TOOLS_PATH / binary_name).resolve()
@@ -173,7 +174,7 @@ def delete_tool(packname: str) -> Result[None, Error]:
     content = VIndexTool(pack_path).content()
     project_name = info.repo_name
     if content is not None:
-        project_name = content.get("project", {}).get("name", info.repo_name)
+        project_name = cast(dict, content.get("project", {})).get("name", info.repo_name)
     suffix = ".exe" if sys.platform == "win32" else ""
     binary_path = Config.VIX_TOOLS_PATH / f"{project_name}{suffix}"
 
@@ -230,7 +231,7 @@ def update_tool(packname: str) -> Generator[Event, None, Result[ToolInfo, Error]
     if content is None:
         return Failure(Validation(reason=f"{info.full_name} 缺少 vindex.toml"))
 
-    project_name = content.get("project", {}).get("name", info.repo_name)
+    project_name = cast(dict, content.get("project", {})).get("name", info.repo_name)
     suffix = ".exe" if sys.platform == "win32" else ""
     binary_name = f"{project_name}{suffix}"
     binary_path = (Config.VIX_TOOLS_PATH / binary_name).resolve()
