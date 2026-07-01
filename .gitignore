@@ -1,11 +1,21 @@
+.python-version
+
+__pycache__/
+*.pyc
+uv.lock
+
 .vix
 .VSCodeCounter
+
 .env
+
 .opencode
+
+.venv/
 build/
+*.egg-info/
 AGENTS.md
+# CodWhat cache
 .codwhat/
 .idea/
 very.exe
-__pycache__/
-*.pyc
