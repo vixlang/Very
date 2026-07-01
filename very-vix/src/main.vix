@@ -5,6 +5,7 @@ extern "C"
     fn fputs(s: string, file: ptr): i32
     fn system(command: ptr): i32
     fn malloc(size: usize): string
+    fn getcwd(buf: string, size: usize): string
 }
 
 fn println_err(message: string)
@@ -14,7 +15,33 @@ fn println_err(message: string)
 
 fn command_run(command: string): i32
 {
-    return system(command)
+    let code = system(command)
+    if (code == 0) { return 0 }
+    return 1
+}
+
+fn cwd_path(): string
+{
+    let buf: string = malloc(4096)
+    let result = getcwd(buf, 4096)
+    if (result == 0) { return "." }
+    return buf
+}
+
+fn absolute_path(path: string): string
+{
+    if (string_starts_with(path, "/") == 1) { return path }
+    return cwd_path() + "/" + path
+}
+
+fn vixc0_binary(): string
+{
+    return "/home/zty/Vix-lang/bootstrap/vixc0"
+}
+
+fn vixc0_run(args: string): i32
+{
+    return command_run(vixc0_binary() + " " + args)
 }
 
 fn char_string(c: i8): string
@@ -205,11 +232,12 @@ fn print_help(): i32
     print("")
     print("Commands:")
     print("  init <name>             create a Vix project")
-    print("  build [file] [-o out]   compile a Vix project with vixc")
+    print("  build [file] [-o out]   compile a Vix project with vixc0")
     print("  run [file] [-o out]     build and run")
-    print("  good [file]             run vixc --check")
+    print("  good [file]             run vixc0 --check")
     print("  add <package>           clone a package into .vix/libs")
     print("  list                    list packages in .vix/libs")
+    print("  <other command>         delegate to Python Very")
     print("  --version               show version")
     return 0
 }
@@ -274,36 +302,36 @@ fn parse_output(argc: i32, argv: ptr, start: i32): string
 
 fn cmd_build(argc: i32, argv: ptr): i32
 {
-    let input = parse_input(argc, argv, 2)
+    let src_path = parse_input(argc, argv, 2)
     let output = parse_output(argc, argv, 2)
-    if (is_safe_arg(input) == 0 or is_safe_arg(output) == 0)
+    if (is_safe_arg(src_path) == 0 or is_safe_arg(output) == 0)
     {
         println_err("very build: unsafe path argument")
         return 1
     }
-    if (file_exists(input) == 0)
+    if (file_exists(src_path) == 0)
     {
-        println_err("very build: input not found '" + input + "'")
+        println_err("very build: input not found '" + src_path + "'")
         return 1
     }
-    print("building " + input)
-    return command_run("vixc " + input + " -o " + output)
+    print("building " + src_path)
+    return vixc0_run("-exe " + absolute_path(src_path) + " -o " + absolute_path(output))
 }
 
 fn cmd_good(argc: i32, argv: ptr): i32
 {
-    let input = parse_input(argc, argv, 2)
-    if (is_safe_arg(input) == 0)
+    let src_path = parse_input(argc, argv, 2)
+    if (is_safe_arg(src_path) == 0)
     {
         println_err("very good: unsafe path argument")
         return 1
     }
-    if (file_exists(input) == 0)
+    if (file_exists(src_path) == 0)
     {
-        println_err("very good: input not found '" + input + "'")
+        println_err("very good: input not found '" + src_path + "'")
         return 1
     }
-    return command_run("vixc --check " + input)
+    return vixc0_run("--check " + absolute_path(src_path))
 }
 
 fn cmd_run(argc: i32, argv: ptr): i32
@@ -353,6 +381,22 @@ fn cmd_list(): i32
     return command_run("find .vix/libs -mindepth 1 -maxdepth 1 -type d -print")
 }
 
+fn delegate_to_python_very(argc: i32, argv: ptr): i32
+{
+    let mut command = "python /home/zty/Very/main.py"
+    for (i in 1 .. argc)
+    {
+        let arg = argv[i]
+        if (is_safe_arg(arg) == 0)
+        {
+            println_err("very: unsafe argument for Python Very delegation")
+            return 1
+        }
+        command = command + " " + arg
+    }
+    return command_run(command)
+}
+
 fn main(argc: i32, argv: ptr): i32
 {
     if (argc < 2) { return print_help() }
@@ -365,6 +409,5 @@ fn main(argc: i32, argv: ptr): i32
     if (command == "good") { return cmd_good(argc, argv) }
     if (command == "add") { return cmd_add(argc, argv) }
     if (command == "list") { return cmd_list() }
-    println_err("very: unknown command '" + command + "'")
-    return 1
+    return delegate_to_python_very(argc, argv)
 }
