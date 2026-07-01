@@ -1,6 +1,5 @@
 [project]
-name = "very" # 必须, 也要符合包名缩写规则
-version = "0.3.0" # 必须
-description = "Vix 项目管理与构建工具" 
-readme = "README.md" # 强制
-deps = [] # 必须, 都是符合缩写规则的包名
+name = "very"
+version = "0.38.1"
+entrypoint = "main.py"
+deps = []
