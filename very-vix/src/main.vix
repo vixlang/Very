@@ -1,0 +1,370 @@
+extern "C"
+{
+    fn fopen(filename: ptr, mode: ptr): ptr
+    fn fclose(file: ptr): i32
+    fn fputs(s: string, file: ptr): i32
+    fn system(command: ptr): i32
+    fn malloc(size: usize): string
+}
+
+fn println_err(message: string)
+{
+    print(message)
+}
+
+fn command_run(command: string): i32
+{
+    return system(command)
+}
+
+fn char_string(c: i8): string
+{
+    let s: string = malloc(2)
+    s[0] = c
+    s[1] = 0
+    return s
+}
+
+fn file_exists(path: string): i32
+{
+    let file = fopen(path, "r")
+    if (file == 0) { return 0 }
+    fclose(file)
+    return 1
+}
+
+fn write_file(path: string, content: string): i32
+{
+    let file = fopen(path, "w")
+    if (file == 0)
+    {
+        println_err("very: cannot write file '" + path + "'")
+        return 1
+    }
+    fputs(content, file)
+    fclose(file)
+    return 0
+}
+
+fn append_file(path: string, content: string): i32
+{
+    let file = fopen(path, "a")
+    if (file == 0)
+    {
+        println_err("very: cannot append file '" + path + "'")
+        return 1
+    }
+    fputs(content, file)
+    fclose(file)
+    return 0
+}
+
+fn string_ends_with(text: string, suffix: string): i32
+{
+    if (text.length < suffix.length) { return 0 }
+    let offset = text.length - suffix.length
+    for (i in 0 .. suffix.length)
+    {
+        if (text[offset + i] != suffix[i]) { return 0 }
+    }
+    return 1
+}
+
+fn string_starts_with(text: string, prefix: string): i32
+{
+    if (text.length < prefix.length) { return 0 }
+    for (i in 0 .. prefix.length)
+    {
+        if (text[i] != prefix[i]) { return 0 }
+    }
+    return 1
+}
+
+fn string_contains(text: string, needle: string): i32
+{
+    if (needle.length == 0) { return 1 }
+    if (text.length < needle.length) { return 0 }
+    let limit = text.length - needle.length + 1
+    for (i in 0 .. limit)
+    {
+        let mut ok = 1
+        for (j in 0 .. needle.length)
+        {
+            if (text[i + j] != needle[j]) { ok = 0 }
+        }
+        if (ok == 1) { return 1 }
+    }
+    return 0
+}
+
+fn slice_string(text: string, start: i32, end: i32): string
+{
+    let mut out = ""
+    for (i in start .. end)
+    {
+        out = out + char_string(text[i])
+    }
+    return out
+}
+
+fn find_last(text: string, needle: string): i32
+{
+    let mut found = -1
+    for (i in 0 .. text.length)
+    {
+        if (text[i] == needle[0]) { found = i }
+    }
+    return found
+}
+
+fn find_first(text: string, needle: string): i32
+{
+    for (i in 0 .. text.length)
+    {
+        if (text[i] == needle[0]) { return i }
+    }
+    return -1
+}
+
+fn strip_branch(spec: string): string
+{
+    if (string_starts_with(spec, "@") == 1) { return spec }
+    let at = find_first(spec, "@")
+    if (at < 0) { return spec }
+    return slice_string(spec, 0, at)
+}
+
+fn package_branch(spec: string): string
+{
+    if (string_starts_with(spec, "@") == 1) { return "" }
+    let at = find_first(spec, "@")
+    if (at < 0) { return "" }
+    return slice_string(spec, at + 1, spec.length)
+}
+
+fn package_basename(path: string): string
+{
+    let slash = find_last(path, "/")
+    if (slash >= 0) { return slice_string(path, slash + 1, path.length) }
+    let dot = find_last(path, ".")
+    if (dot >= 0) { return slice_string(path, dot + 1, path.length) }
+    return path
+}
+
+fn is_safe_arg(text: string): i32
+{
+    if (text.length == 0) { return 0 }
+    if (string_contains(text, " ") == 1) { return 0 }
+    if (string_contains(text, ";") == 1) { return 0 }
+    if (string_contains(text, "&") == 1) { return 0 }
+    if (string_contains(text, "|") == 1) { return 0 }
+    if (string_contains(text, "`") == 1) { return 0 }
+    if (string_contains(text, "$") == 1) { return 0 }
+    if (string_contains(text, "\\") == 1) { return 0 }
+    return 1
+}
+
+fn normalize_package_host(spec: string): string
+{
+    let base = strip_branch(spec)
+    if (string_starts_with(base, "@") == 1)
+    {
+        return "gitee.com/" + slice_string(base, 1, base.length)
+    }
+    if (string_contains(base, ":") == 1)
+    {
+        let colon = find_first(base, ":")
+        let host = slice_string(base, 0, colon)
+        let rest = slice_string(base, colon + 1, base.length)
+        if (string_contains(host, ".") == 1)
+        {
+            return host + "/" + rest
+        }
+        return host + ".com/" + rest
+    }
+    if (string_contains(base, "/") == 1)
+    {
+        return base
+    }
+    if (string_contains(base, ".") == 1)
+    {
+        let dot = find_first(base, ".")
+        let owner = slice_string(base, 0, dot)
+        let repo = slice_string(base, dot + 1, base.length)
+        return "github.com/" + owner + "/" + repo
+    }
+    return "github.com/vixlang/vlib-" + base
+}
+
+fn print_help(): i32
+{
+    print("Very Vix bootstrap")
+    print("")
+    print("Usage:")
+    print("  very-vix <command> [args]")
+    print("")
+    print("Commands:")
+    print("  init <name>             create a Vix project")
+    print("  build [file] [-o out]   compile a Vix project with vixc")
+    print("  run [file] [-o out]     build and run")
+    print("  good [file]             run vixc --check")
+    print("  add <package>           clone a package into .vix/libs")
+    print("  list                    list packages in .vix/libs")
+    print("  --version               show version")
+    return 0
+}
+
+fn print_version(): i32
+{
+    print("very-vix 0.1.0-bootstrap")
+    return 0
+}
+
+fn project_vindex(name: string): string
+{
+    return "[project]\nname = \"" + name + "\"\nversion = \"0.1.0\"\nentrypoint = \"main.vix\"\ndeps = []\n"
+}
+
+fn project_main(): string
+{
+    return "fn main(): i32 {\n    print(\"hello from Vix\")\n    return 0\n}\n"
+}
+
+fn cmd_init(argc: i32, argv: ptr): i32
+{
+    if (argc < 3)
+    {
+        println_err("very init: missing project name")
+        return 1
+    }
+    let path = argv[2]
+    if (is_safe_arg(path) == 0)
+    {
+        println_err("very init: unsafe project name")
+        return 1
+    }
+    let name = package_basename(path)
+    if (command_run("mkdir -p " + path) != 0) { return 1 }
+    if (write_file(path + "/vindex.toml", project_vindex(name)) != 0) { return 1 }
+    if (write_file(path + "/main.vix", project_main()) != 0) { return 1 }
+    if (write_file(path + "/README.md", "# " + name + "\n\nCreated by very-vix.\n") != 0) { return 1 }
+    print("created " + path)
+    return 0
+}
+
+fn parse_input(argc: i32, argv: ptr, start: i32): string
+{
+    for (i in start .. argc)
+    {
+        let arg = argv[i]
+        if (string_ends_with(arg, ".vix") == 1) { return arg }
+    }
+    return "main.vix"
+}
+
+fn parse_output(argc: i32, argv: ptr, start: i32): string
+{
+    for (i in start .. argc)
+    {
+        let arg = argv[i]
+        if (arg == "-o" and i + 1 < argc) { return argv[i + 1] }
+    }
+    return "main"
+}
+
+fn cmd_build(argc: i32, argv: ptr): i32
+{
+    let input = parse_input(argc, argv, 2)
+    let output = parse_output(argc, argv, 2)
+    if (is_safe_arg(input) == 0 or is_safe_arg(output) == 0)
+    {
+        println_err("very build: unsafe path argument")
+        return 1
+    }
+    if (file_exists(input) == 0)
+    {
+        println_err("very build: input not found '" + input + "'")
+        return 1
+    }
+    print("building " + input)
+    return command_run("vixc " + input + " -o " + output)
+}
+
+fn cmd_good(argc: i32, argv: ptr): i32
+{
+    let input = parse_input(argc, argv, 2)
+    if (is_safe_arg(input) == 0)
+    {
+        println_err("very good: unsafe path argument")
+        return 1
+    }
+    if (file_exists(input) == 0)
+    {
+        println_err("very good: input not found '" + input + "'")
+        return 1
+    }
+    return command_run("vixc --check " + input)
+}
+
+fn cmd_run(argc: i32, argv: ptr): i32
+{
+    let output = parse_output(argc, argv, 2)
+    let code = cmd_build(argc, argv)
+    if (code != 0) { return code }
+    return command_run("./" + output)
+}
+
+fn cmd_add(argc: i32, argv: ptr): i32
+{
+    if (argc < 3)
+    {
+        println_err("very add: missing package")
+        return 1
+    }
+    let spec = argv[2]
+    if (is_safe_arg(spec) == 0)
+    {
+        println_err("very add: unsafe package spec")
+        return 1
+    }
+    let full = normalize_package_host(spec)
+    let name = package_basename(full)
+    let branch = package_branch(spec)
+    if (command_run("mkdir -p .vix/libs") != 0) { return 1 }
+    let mut clone = "git clone https://" + full + " .vix/libs/" + name
+    if (branch != "") { clone = "git clone --branch " + branch + " https://" + full + " .vix/libs/" + name }
+    let code = command_run(clone)
+    if (code != 0) { return code }
+    if (file_exists("vindex.toml") == 1)
+    {
+        append_file("vindex.toml", "\n# very-vix dependency: " + spec + "\n")
+    }
+    print("added " + full)
+    return 0
+}
+
+fn cmd_list(): i32
+{
+    if (file_exists(".vix/libs") == 0)
+    {
+        print("no packages installed")
+        return 0
+    }
+    return command_run("find .vix/libs -mindepth 1 -maxdepth 1 -type d -print")
+}
+
+fn main(argc: i32, argv: ptr): i32
+{
+    if (argc < 2) { return print_help() }
+    let command = argv[1]
+    if (command == "-h" or command == "--help" or command == "help") { return print_help() }
+    if (command == "-v" or command == "--version") { return print_version() }
+    if (command == "init") { return cmd_init(argc, argv) }
+    if (command == "build") { return cmd_build(argc, argv) }
+    if (command == "run") { return cmd_run(argc, argv) }
+    if (command == "good") { return cmd_good(argc, argv) }
+    if (command == "add") { return cmd_add(argc, argv) }
+    if (command == "list") { return cmd_list() }
+    println_err("very: unknown command '" + command + "'")
+    return 1
+}
