@@ -1,0 +1,21 @@
+#[no_main]
+import "util.vix"
+import "vindex.vix"
+
+pub fn cmd_info(): i32
+{
+    let vindex = vindex_load()
+    if (vindex.ok == 0)
+    {
+        println_err("very info: vindex.toml not found")
+        return 1
+    }
+    print("name: " + vindex.name)
+    print("entrypoint: " + vindex.entrypoint)
+    print("deps:")
+    for (i in 0 .. vindex.deps.length)
+    {
+        print("  " + vindex.deps[i])
+    }
+    return 0
+}

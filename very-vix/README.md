@@ -29,6 +29,7 @@ Project source and output paths are resolved to absolute paths before invoking
 - `build [file] [-o out]`
 - `run [file] [-o out]`
 - `good [file]`
+- `info`
 - `add <package>`
 - `list`
 - `--help`
@@ -38,5 +39,27 @@ Package support is a first bootstrap pass: `add` normalizes the same common
 Very shorthand forms and clones into `.vix/libs`, but full dependency graph
 resolution remains in the Python implementation.
 
+## TOML support
+
+`very-vix` parses the subset of `vindex.toml` needed for bootstrap project
+management:
+
+- `[project].name`
+- `[project].entrypoint`
+- `[project].deps` as a string array
+- legacy `[dependencies]` keys as dependency names
+
+`build`, `good`, and `run` use `project.entrypoint` when no source file is
+provided. `build` and `run` use `project.name` when `-o` is not provided.
+
 Commands not yet implemented in Vix are delegated to the Python Very entrypoint
 as a compatibility bridge.
+
+## Source Layout
+
+- `main.vix`: command dispatch and top-level help/version output
+- `util.vix`: file IO, process execution, path helpers, and string helpers
+- `vindex.vix`: bootstrap TOML parsing and `vindex.toml` loading
+- `package.vix`: package name normalization and argument safety checks
+- `project_args.vix`: shared source/output argument defaults
+- `cmd_*.vix`: one module per command implementation

@@ -1,0 +1,176 @@
+#[no_main]
+import "util.vix"
+
+pub type VIndex = struct {
+    ok: i32,
+    name: string,
+    entrypoint: string,
+    deps: [string]
+}
+
+pub fn toml_strip_comment(line: string): string
+{
+    let mut in_string = 0
+    for (i in 0 .. line.length)
+    {
+        if (line[i] == '"')
+        {
+            if (in_string == 0) { in_string = 1 } else { in_string = 0 }
+        }
+        elif (line[i] == '#' and in_string == 0)
+        {
+            return slice_string(line, 0, i)
+        }
+    }
+    return line
+}
+
+pub fn toml_clean_line(line: string): string
+{
+    return trim_string(toml_strip_comment(line))
+}
+
+pub fn toml_find_equal(line: string): i32
+{
+    let mut in_string = 0
+    for (i in 0 .. line.length)
+    {
+        if (line[i] == '"')
+        {
+            if (in_string == 0) { in_string = 1 } else { in_string = 0 }
+        }
+        elif (line[i] == '=' and in_string == 0)
+        {
+            return i
+        }
+    }
+    return -1
+}
+
+pub fn toml_section_name(line: string): string
+{
+    if (line.length < 2) { return "" }
+    if (line[0] != '[' or line[line.length - 1] != ']') { return "" }
+    return trim_string(slice_string(line, 1, line.length - 1))
+}
+
+pub fn toml_key(line: string): string
+{
+    let eq = toml_find_equal(line)
+    if (eq < 0) { return "" }
+    return trim_string(slice_string(line, 0, eq))
+}
+
+pub fn toml_value(line: string): string
+{
+    let eq = toml_find_equal(line)
+    if (eq < 0) { return "" }
+    return trim_string(slice_string(line, eq + 1, line.length))
+}
+
+pub fn toml_unquote(value: string): string
+{
+    let text = trim_string(value)
+    if (text.length >= 2 and text[0] == '"' and text[text.length - 1] == '"')
+    {
+        return slice_string(text, 1, text.length - 1)
+    }
+    return text
+}
+
+pub fn toml_parse_string_array(value: string): [string]
+{
+    let text = trim_string(value)
+    let mut out: [string] = []
+    if (text.length < 2) { return out }
+    if (text[0] != '[' or text[text.length - 1] != ']') { return out }
+    let mut i = 1
+    while (i < text.length - 1)
+    {
+        while (i < text.length - 1 and (is_space(text[i]) == 1 or text[i] == ','))
+        {
+            i += 1
+        }
+        if (i < text.length - 1 and text[i] == '"')
+        {
+            i += 1
+            let start = i
+            while (i < text.length - 1 and text[i] != '"')
+            {
+                i += 1
+            }
+            out.push(slice_string(text, start, i))
+            if (i < text.length - 1) { i += 1 }
+        }
+        else
+        {
+            let start2 = i
+            while (i < text.length - 1 and text[i] != ',')
+            {
+                i += 1
+            }
+            let item = trim_string(slice_string(text, start2, i))
+            if (item != "") { out.push(item) }
+        }
+    }
+    return out
+}
+
+pub fn vindex_default(): VIndex
+{
+    return VIndex{ ok: 0, name: "main", entrypoint: "main.vix", deps: [] }
+}
+
+pub fn vindex_load(): VIndex
+{
+    let src = read_text_file("vindex.toml")
+    let mut result = vindex_default()
+    if (src == "") { return result }
+    result.ok = 1
+    let mut section = ""
+    let mut pos = 0
+    while (pos < src.length)
+    {
+        let raw_line = line_at(src, pos)
+        let line = toml_clean_line(raw_line)
+        if (line != "")
+        {
+            let parsed_section = toml_section_name(line)
+            if (parsed_section != "")
+            {
+                section = parsed_section
+            }
+            else
+            {
+                let key = toml_key(line)
+                let value = toml_value(line)
+                if (section == "project")
+                {
+                    if (key == "name")
+                    {
+                        result.name = toml_unquote(value)
+                    }
+                    elif (key == "entrypoint")
+                    {
+                        result.entrypoint = toml_unquote(value)
+                    }
+                    elif (key == "deps")
+                    {
+                        result.deps = toml_parse_string_array(value)
+                    }
+                }
+                elif (section == "dependencies")
+                {
+                    if (key != "") { result.deps.push(key) }
+                }
+            }
+        }
+        pos = next_line_start(src, pos)
+    }
+    return result
+}
+
+pub fn project_vindex(name: string): string
+{
+    return "[project]\nname = \"" + name + "\"\nversion = \"0.1.0\"\nentrypoint = \"main.vix\"\ndeps = []\n"
+}

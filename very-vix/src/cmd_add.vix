@@ -1,0 +1,32 @@
+#[no_main]
+import "util.vix"
+import "package.vix"
+
+pub fn cmd_add(argc: i32, argv: ptr): i32
+{
+    if (argc < 3)
+    {
+        println_err("very add: missing package")
+        return 1
+    }
+    let spec = argv[2]
+    if (is_safe_arg(spec) == 0)
+    {
+        println_err("very add: unsafe package spec")
+        return 1
+    }
+    let full = normalize_package_host(spec)
+    let name = package_basename(full)
+    let branch = package_branch(spec)
+    if (command_run("mkdir -p .vix/libs") != 0) { return 1 }
+    let mut clone = "git clone https://" + full + " .vix/libs/" + name
+    if (branch != "") { clone = "git clone --branch " + branch + " https://" + full + " .vix/libs/" + name }
+    let code = command_run(clone)
+    if (code != 0) { return code }
+    if (file_exists("vindex.toml") == 1)
+    {
+        append_file("vindex.toml", "\n# very-vix dependency: " + spec + "\n")
+    }
+    print("added " + full)
+    return 0
+}

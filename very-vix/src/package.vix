@@ -1,0 +1,72 @@
+#[no_main]
+import "util.vix"
+
+pub fn strip_branch(spec: string): string
+{
+    if (string_starts_with(spec, "@") == 1) { return spec }
+    let at = find_first(spec, "@")
+    if (at < 0) { return spec }
+    return slice_string(spec, 0, at)
+}
+
+pub fn package_branch(spec: string): string
+{
+    if (string_starts_with(spec, "@") == 1) { return "" }
+    let at = find_first(spec, "@")
+    if (at < 0) { return "" }
+    return slice_string(spec, at + 1, spec.length)
+}
+
+pub fn package_basename(path: string): string
+{
+    let slash = find_last(path, "/")
+    if (slash >= 0) { return slice_string(path, slash + 1, path.length) }
+    let dot = find_last(path, ".")
+    if (dot >= 0) { return slice_string(path, dot + 1, path.length) }
+    return path
+}
+
+pub fn is_safe_arg(text: string): i32
+{
+    if (text.length == 0) { return 0 }
+    if (string_contains(text, " ") == 1) { return 0 }
+    if (string_contains(text, ";") == 1) { return 0 }
+    if (string_contains(text, "&") == 1) { return 0 }
+    if (string_contains(text, "|") == 1) { return 0 }
+    if (string_contains(text, "`") == 1) { return 0 }
+    if (string_contains(text, "$") == 1) { return 0 }
+    if (string_contains(text, "\\") == 1) { return 0 }
+    return 1
+}
+
+pub fn normalize_package_host(spec: string): string
+{
+    let base = strip_branch(spec)
+    if (string_starts_with(base, "@") == 1)
+    {
+        return "gitee.com/" + slice_string(base, 1, base.length)
+    }
+    if (string_contains(base, ":") == 1)
+    {
+        let colon = find_first(base, ":")
+        let host = slice_string(base, 0, colon)
+        let rest = slice_string(base, colon + 1, base.length)
+        if (string_contains(host, ".") == 1)
+        {
+            return host + "/" + rest
+        }
+        return host + ".com/" + rest
+    }
+    if (string_contains(base, "/") == 1)
+    {
+        return base
+    }
+    if (string_contains(base, ".") == 1)
+    {
+        let dot = find_first(base, ".")
+        let owner = slice_string(base, 0, dot)
+        let repo = slice_string(base, dot + 1, base.length)
+        return "github.com/" + owner + "/" + repo
+    }
+    return "github.com/vixlang/vlib-" + base
+}

@@ -1,0 +1,215 @@
+#[no_main]
+
+extern "C"
+{
+    fn fopen(filename: ptr, mode: ptr): ptr
+    fn fclose(file: ptr): i32
+    fn fread(buf: ptr, size: i64, count: i64, file: ptr): i64
+    fn fputs(s: string, file: ptr): i32
+    fn fseek(file: ptr, offset: i64, whence: i32): i32
+    fn ftell(file: ptr): i64
+    fn system(command: ptr): i32
+    fn malloc(size: usize): string
+    fn getcwd(buf: string, size: usize): string
+}
+
+pub fn println_err(message: string)
+{
+    print(message)
+}
+
+pub fn command_run(command: string): i32
+{
+    let code = system(command)
+    if (code == 0) { return 0 }
+    return 1
+}
+
+pub fn cwd_path(): string
+{
+    let buf: string = malloc(4096)
+    let result = getcwd(buf, 4096)
+    if (result == 0) { return "." }
+    return buf
+}
+
+pub fn absolute_path(path: string): string
+{
+    if (string_starts_with(path, "/") == 1) { return path }
+    return cwd_path() + "/" + path
+}
+
+pub fn vixc0_binary(): string
+{
+    return "/home/zty/Vix-lang/bootstrap/vixc0"
+}
+
+pub fn vixc0_run(args: string): i32
+{
+    return command_run(vixc0_binary() + " " + args)
+}
+
+pub fn char_string(c: i8): string
+{
+    let s: string = malloc(2)
+    s[0] = c
+    s[1] = 0
+    return s
+}
+
+pub fn file_exists(path: string): i32
+{
+    let file = fopen(path, "r")
+    if (file == 0) { return 0 }
+    fclose(file)
+    return 1
+}
+
+pub fn read_text_file(path: string): string
+{
+    let file = fopen(path, "r")
+    if (file == 0) { return "" }
+    fseek(file, 0, 2)
+    let size = ftell(file)
+    fseek(file, 0, 0)
+    let buf = malloc(size + 1)
+    let n = fread(buf, 1, size, file)
+    buf[n] = 0
+    fclose(file)
+    return buf
+}
+
+pub fn write_file(path: string, content: string): i32
+{
+    let file = fopen(path, "w")
+    if (file == 0)
+    {
+        println_err("very: cannot write file '" + path + "'")
+        return 1
+    }
+    fputs(content, file)
+    fclose(file)
+    return 0
+}
+
+pub fn append_file(path: string, content: string): i32
+{
+    let file = fopen(path, "a")
+    if (file == 0)
+    {
+        println_err("very: cannot append file '" + path + "'")
+        return 1
+    }
+    fputs(content, file)
+    fclose(file)
+    return 0
+}
+
+pub fn string_ends_with(text: string, suffix: string): i32
+{
+    if (text.length < suffix.length) { return 0 }
+    let offset = text.length - suffix.length
+    for (i in 0 .. suffix.length)
+    {
+        if (text[offset + i] != suffix[i]) { return 0 }
+    }
+    return 1
+}
+
+pub fn string_starts_with(text: string, prefix: string): i32
+{
+    if (text.length < prefix.length) { return 0 }
+    for (i in 0 .. prefix.length)
+    {
+        if (text[i] != prefix[i]) { return 0 }
+    }
+    return 1
+}
+
+pub fn string_contains(text: string, needle: string): i32
+{
+    if (needle.length == 0) { return 1 }
+    if (text.length < needle.length) { return 0 }
+    let limit = text.length - needle.length + 1
+    for (i in 0 .. limit)
+    {
+        let mut ok = 1
+        for (j in 0 .. needle.length)
+        {
+            if (text[i + j] != needle[j]) { ok = 0 }
+        }
+        if (ok == 1) { return 1 }
+    }
+    return 0
+}
+
+pub fn slice_string(text: string, start: i32, end: i32): string
+{
+    let mut out = ""
+    for (i in start .. end)
+    {
+        out = out + char_string(text[i])
+    }
+    return out
+}
+
+pub fn find_last(text: string, needle: string): i32
+{
+    let mut found = -1
+    for (i in 0 .. text.length)
+    {
+        if (text[i] == needle[0]) { found = i }
+    }
+    return found
+}
+
+pub fn find_first(text: string, needle: string): i32
+{
+    for (i in 0 .. text.length)
+    {
+        if (text[i] == needle[0]) { return i }
+    }
+    return -1
+}
+
+pub fn is_space(c: i8): i32
+{
+    if (c == 32 or c == 9 or c == 10 or c == 13) { return 1 }
+    return 0
+}
+
+pub fn trim_string(text: string): string
+{
+    let mut start = 0
+    while (start < text.length and is_space(text[start]) == 1)
+    {
+        start += 1
+    }
+    let mut end = text.length
+    while (end > start and is_space(text[end - 1]) == 1)
+    {
+        end -= 1
+    }
+    return slice_string(text, start, end)
+}
+
+pub fn line_at(src: string, start: i32): string
+{
+    let mut end = start
+    while (end < src.length and src[end] != 10 and src[end] != 13)
+    {
+        end += 1
+    }
+    return slice_string(src, start, end)
+}
+
+pub fn next_line_start(src: string, start: i32): i32
+{
+    let mut pos = start
+    while (pos < src.length and src[pos] != 10)
+    {
+        pos += 1
+    }
+    if (pos < src.length) { pos += 1 }
+    return pos
+}

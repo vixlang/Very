@@ -1,0 +1,12 @@
+#[no_main]
+import "util.vix"
+import "project_args.vix"
+import "cmd_build.vix"
+
+pub fn cmd_run(argc: i32, argv: ptr): i32
+{
+    let output = parse_output(argc, argv, 2)
+    let code = cmd_build(argc, argv)
+    if (code != 0) { return code }
+    return command_run("./" + output)
+}

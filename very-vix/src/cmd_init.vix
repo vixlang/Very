@@ -1,0 +1,31 @@
+#[no_main]
+import "util.vix"
+import "vindex.vix"
+import "package.vix"
+
+pub fn project_main(): string
+{
+    return "fn main(): i32 {\n    print(\"hello from Vix\")\n    return 0\n}\n"
+}
+
+pub fn cmd_init(argc: i32, argv: ptr): i32
+{
+    if (argc < 3)
+    {
+        println_err("very init: missing project name")
+        return 1
+    }
+    let path = argv[2]
+    if (is_safe_arg(path) == 0)
+    {
+        println_err("very init: unsafe project name")
+        return 1
+    }
+    let name = package_basename(path)
+    if (command_run("mkdir -p " + path) != 0) { return 1 }
+    if (write_file(path + "/vindex.toml", project_vindex(name)) != 0) { return 1 }
+    if (write_file(path + "/main.vix", project_main()) != 0) { return 1 }
+    if (write_file(path + "/README.md", "# " + name + "\n\nCreated by very-vix.\n") != 0) { return 1 }
+    print("created " + path)
+    return 0
+}

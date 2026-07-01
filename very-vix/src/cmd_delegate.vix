@@ -1,0 +1,19 @@
+#[no_main]
+import "util.vix"
+import "package.vix"
+
+pub fn delegate_to_python_very(argc: i32, argv: ptr): i32
+{
+    let mut command = "python /home/zty/Very/main.py"
+    for (i in 1 .. argc)
+    {
+        let arg = argv[i]
+        if (is_safe_arg(arg) == 0)
+        {
+            println_err("very: unsafe argument for Python Very delegation")
+            return 1
+        }
+        command = command + " " + arg
+    }
+    return command_run(command)
+}

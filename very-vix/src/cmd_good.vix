@@ -1,0 +1,20 @@
+#[no_main]
+import "util.vix"
+import "package.vix"
+import "project_args.vix"
+
+pub fn cmd_good(argc: i32, argv: ptr): i32
+{
+    let src_path = parse_input(argc, argv, 2)
+    if (is_safe_arg(src_path) == 0)
+    {
+        println_err("very good: unsafe path argument")
+        return 1
+    }
+    if (file_exists(src_path) == 0)
+    {
+        println_err("very good: input not found '" + src_path + "'")
+        return 1
+    }
+    return vixc0_run("--check " + absolute_path(src_path))
+}

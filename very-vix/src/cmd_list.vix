@@ -1,0 +1,12 @@
+#[no_main]
+import "util.vix"
+
+pub fn cmd_list(): i32
+{
+    if (file_exists(".vix/libs") == 0)
+    {
+        print("no packages installed")
+        return 0
+    }
+    return command_run("find .vix/libs -mindepth 1 -maxdepth 1 -type d -print")
+}
