@@ -8,7 +8,7 @@ VIXC0="${VIXC0:-$VIX_BOOTSTRAP/vixc0}"
 mkdir -p "$ROOT/build"
 (
   cd "$VIX_BOOTSTRAP"
-  "$VIXC0" -exe "$ROOT/src/main.vix" -o "$ROOT/build/very-vix"
+  "$VIXC0" -exe "$ROOT/src/main.vix" -o "$ROOT/build/very"
 )
 
-printf '%s\n' "$ROOT/build/very-vix"
+printf '%s\n' "$ROOT/build/very"

@@ -1,0 +1,63 @@
+#[no_main]
+import "util.vix"
+import "vindex.vix"
+
+pub fn parse_input(argc: i32, argv: ptr, start: i32): string
+{
+    for (i in start .. argc)
+    {
+        let arg = argv[i]
+        if (string_ends_with(arg, ".vix") == 1) { return arg }
+    }
+    let vindex = vindex_load()
+    return vindex.entrypoint
+}
+
+pub fn parse_output(argc: i32, argv: ptr, start: i32): string
+{
+    for (i in start .. argc)
+    {
+        let arg = argv[i]
+        if (arg == "-o" and i + 1 < argc) { return argv[i + 1] }
+    }
+    let vindex = vindex_load()
+    return vindex.name
+}
+
+pub fn dep_link_arg(dep: string): string
+{
+    if (dep == "sdl2" or dep == "SDL2") { return "-lSDL2" }
+    if (string_starts_with(dep, "-l") == 1 or string_starts_with(dep, "-L") == 1) { return dep }
+    return ""
+}
+
+pub fn parse_link_args(argc: i32, argv: ptr, start: i32): string
+{
+    let mut out = ""
+    let mut i = start
+    while (i < argc)
+    {
+        let arg = argv[i]
+        if (arg == "-l" or arg == "-L")
+        {
+            if (i + 1 < argc)
+            {
+                out = out + " " + arg + argv[i + 1]
+                i += 1
+            }
+        }
+        elif (string_starts_with(arg, "-l") == 1 or string_starts_with(arg, "-L") == 1)
+        {
+            out = out + " " + arg
+        }
+        i += 1
+    }
+
+    let vindex = vindex_load()
+    for (j in 0 .. vindex.deps.length)
+    {
+        let dep_arg = dep_link_arg(vindex.deps[j])
+        if (dep_arg != "") { out = out + " " + dep_arg }
+    }
+    return out
+}

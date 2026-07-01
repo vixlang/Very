@@ -74,6 +74,30 @@ def _default_output_name(root: Path = Path.cwd()) -> str:
     return f"{name}.exe" if sys.platform == "win32" else name
 
 
+def _dep_link_args(root: Path = Path.cwd()) -> list[str]:
+    vindex = root / "vindex.toml"
+    try:
+        with open(vindex, "rb") as f:
+            data = tomllib.load(f)
+    except Exception:
+        return []
+
+    deps = data.get("project", {}).get("deps", [])
+    if not isinstance(deps, list):
+        return []
+
+    args: list[str] = []
+    for dep in deps:
+        if not isinstance(dep, str):
+            continue
+        normalized = dep.lower()
+        if normalized == "sdl2":
+            args.append("-lSDL2")
+        elif dep.startswith(("-l", "-L")):
+            args.append(dep)
+    return args
+
+
 def build_project(
     root: Path, extra_args: list[str]
 ) -> Generator[Event, None, Result[Path, Compile | IOError]]:
@@ -96,6 +120,7 @@ def build_project(
     temp_dir.mkdir(parents=True, exist_ok=True)
     output_path = (root / output_name).resolve()
     has_gcc = _has_gcc()
+    link_args = _dep_link_args(root)
 
     yield Progress(msg=f"编译: {input_file.name}", pct=0.3)
 
@@ -112,7 +137,7 @@ def build_project(
             )
 
         yield Progress(msg="链接", pct=0.7)
-        link_cmd = ["gcc", str(obj_path), "-o", str(output_path)]
+        link_cmd = ["gcc", str(obj_path), "-o", str(output_path)] + link_args
         yield Log(level="info", msg=f"gcc: {' '.join(link_cmd)}")
         r2 = subprocess.run(link_cmd, cwd=root)
         if r2.returncode != 0:

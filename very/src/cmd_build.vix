@@ -7,6 +7,7 @@ pub fn cmd_build(argc: i32, argv: ptr): i32
 {
     let src_path = parse_input(argc, argv, 2)
     let output = parse_output(argc, argv, 2)
+    let link_args = parse_link_args(argc, argv, 2)
     if (is_safe_arg(src_path) == 0 or is_safe_arg(output) == 0)
     {
         println_err("very build: unsafe path argument")
@@ -18,5 +19,5 @@ pub fn cmd_build(argc: i32, argv: ptr): i32
         return 1
     }
     print("building " + src_path)
-    return vixc0_run("-exe " + absolute_path(src_path) + " -o " + absolute_path(output))
+    return vixc0_run("-exe " + absolute_path(src_path) + " -o " + absolute_path(output) + link_args)
 }
