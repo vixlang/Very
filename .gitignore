@@ -1,12 +1,11 @@
 .vix
 .VSCodeCounter
-
 .env
-
 .opencode
-
 build/
 AGENTS.md
 .codwhat/
 .idea/
 very.exe
+__pycache__/
+*.pyc
