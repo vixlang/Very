@@ -1,8 +1,3 @@
-.python-version
-
-__pycache__/
-uv.lock
-
 .vix
 .VSCodeCounter
 
@@ -10,11 +5,8 @@ uv.lock
 
 .opencode
 
-.venv/
 build/
-*.egg-info/
 AGENTS.md
-# CodWhat cache
 .codwhat/
 .idea/
 very.exe
