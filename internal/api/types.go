@@ -55,6 +55,8 @@ func (i PackageNameInfo) FullName() string {
 
 var _gitSuffixRE = regexp.MustCompile(`\.git$`)
 
+// parsePackName 解析包名的多种简写格式。新用户应参考 README 的「包名语法」表格。
+// 各分支按优先级依次匹配：完整 URL、SCP 风格（@+:）、colon 格式、slash 格式、点分格式、bare name。
 func parsePackName(packageName string, parent string, barePrefix string) (PackageNameInfo, error) {
 	original := packageName
 	defaultHost := DEFAULT_HOST

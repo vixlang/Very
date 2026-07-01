@@ -51,6 +51,18 @@ deps = [
 ]
 ```
 
+## 生成的项目骨架（`very init`）
+
+```
+my-project/
+├── vindex.toml          # 项目配置（版本、依赖、入口）
+├── main.vix             # 主入口
+├── src/
+│   └── lib.vix          # 示例库模块
+├── .gitignore
+└── README.md
+```
+
 ## 依赖包名格式
 
 `deps` 数组中每个元素和 `very add` 命令的包名完全一致：

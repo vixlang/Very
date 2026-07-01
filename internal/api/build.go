@@ -1,6 +1,7 @@
 package api
 
 import (
+	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -211,7 +212,7 @@ func CheckFiles(patterns []string, root string) (*CheckReport, error) {
 		if err != nil {
 			errMsg := strings.TrimSpace(string(out))
 			if errMsg == "" {
-				errMsg = "退出码 " + string(rune(cmd.ProcessState.ExitCode()))
+				errMsg = fmt.Sprintf("退出码 %d", cmd.ProcessState.ExitCode())
 			}
 			errors = append(errors, f+": "+errMsg)
 		}

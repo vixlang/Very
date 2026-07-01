@@ -30,6 +30,8 @@ type UpdateInfo struct {
 	Updated  bool
 }
 
+// iterPackageDirs 遍历 libs 目录下的 host/user/repo 三级嵌套目录。
+// 返回 Go 1.23 风格的迭代器，供 ListPackages/PrunePackages 等函数消费。
 func iterPackageDirs(libsPath string) func(func(string, string, string, string) bool) {
 	return func(yield func(host, user, repo, fullName string) bool) {
 		entries, err := os.ReadDir(libsPath)
@@ -214,6 +216,7 @@ func PrunePackages(emptyOnly, invalidOnly, removeUnused bool) (*PruneReport, err
 	return report, nil
 }
 
+// removeEmptyDirs 从最深层向根目录删除空目录，避免父目录非空导致无法删除子目录。
 func removeEmptyDirs(libsPath string, removed *[]string) {
 	entries, _ := os.ReadDir(libsPath)
 	for i := len(entries) - 1; i >= 0; i-- {

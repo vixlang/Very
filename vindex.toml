@@ -1,5 +1,5 @@
 [project]
-name = "very"
-version = "0.38.1"
-entrypoint = "main.py"
-deps = []
+  name = "very"
+  version = "0.39.0"
+  entrypoint = "main.go"
+  deps = []

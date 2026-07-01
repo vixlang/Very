@@ -247,6 +247,8 @@ func UpdateTool(packname string) (*ToolInfo, error) {
 	return &ToolInfo{FullName: info.FullName(), BinaryPath: binaryPath}, nil
 }
 
+// PruneTools 清理工具目录：删除无 vindex.toml 的无效目录、空目录，
+// 以及源码目录中 vindex.toml 的 project.name 不匹配的孤立 .exe 文件。
 func PruneTools(emptyOnly, invalidOnly bool) (*ToolPruneReport, error) {
 	toolsPath := Config{}.VIX_TOOLS_PATH()
 	if !fileExists(toolsPath) {

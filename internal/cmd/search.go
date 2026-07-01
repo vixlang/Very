@@ -67,7 +67,7 @@ var searchCmd = &cobra.Command{
 
 func clearSearchCache() {
 	api.ClearCache(searchCacheFile)
-	logOk(fmt.Sprintf("缓存已清理"))
+	logOk("缓存已清理")
 }
 
 func showSearchCacheStatus() {

@@ -2,6 +2,8 @@ package api
 
 import "fmt"
 
+// Error 是所有业务错误的接口。IsError 是标记方法，用于编译期区分普通 error。
+// CLI 层通过 switch e := err.(type) 分支处理不同错误类型，输出对应颜色和提示。
 type Error interface {
 	error
 	IsError()
