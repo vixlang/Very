@@ -39,12 +39,12 @@ pub fn absolute_path(path: string): string
     return cwd_path() + "/" + path
 }
 
-pub fn vixc0_binary(): string
+pub fn vixc_binary(): string
 {
-    return "/home/zty/Vix-lang/bootstrap/vixc0"
+    return "vixc"
 }
 
-pub fn vixc0_run(args: string): i32
+pub fn vixc_run(args: string): i32
 {
     return command_run(vixc0_binary() + " " + args)
 }
