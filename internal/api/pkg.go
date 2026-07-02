@@ -184,8 +184,9 @@ func PrunePackages(emptyOnly, invalidOnly, removeUnused bool) (*PruneReport, err
 	}
 
 	report := &PruneReport{}
+	SpecificFlag := emptyOnly || invalidOnly || removeUnused
 
-	if !emptyOnly {
+	if !emptyOnly && !(removeUnused && !invalidOnly) {
 		iterPackageDirs(libsPath)(func(host, user, repo, fullName string) bool {
 			repoDir := filepath.Join(libsPath, host, user, repo)
 			if !fileExists(filepath.Join(repoDir, "vindex.toml")) {
@@ -196,11 +197,11 @@ func PrunePackages(emptyOnly, invalidOnly, removeUnused bool) (*PruneReport, err
 		})
 	}
 
-	if !invalidOnly {
+	if !invalidOnly && !(removeUnused && !emptyOnly) {
 		removeEmptyDirs(libsPath, &report.RemovedEmpty)
 	}
 
-	shouldFindUnused := removeUnused || (!emptyOnly && !invalidOnly)
+	shouldFindUnused := removeUnused || (!SpecificFlag)
 	if shouldFindUnused {
 		unused := FindUnusedPackages(libsPath)
 		iterPackageDirs(libsPath)(func(host, user, repo, fullName string) bool {
@@ -336,6 +337,15 @@ func InstallPackage(spec string, forceLocal bool) (*PackageInfo, error) {
 }
 
 func UpdatePackage(spec string) (*UpdateInfo, error) {
+	return updatePackageInternal(spec, make(map[string]bool))
+}
+
+func updatePackageInternal(spec string, visited map[string]bool) (*UpdateInfo, error) {
+	if visited[spec] {
+		return &UpdateInfo{FullName: spec, Updated: false}, nil
+	}
+	visited[spec] = true
+
 	pathsToCheck := []string{Config{}.LocalLibsPath(), Config{}.VIX_LIBS_PATH()}
 	var packPath string
 	var fullName string
@@ -365,7 +375,7 @@ func UpdatePackage(spec string) (*UpdateInfo, error) {
 	if fileExists(vindexFile) {
 		deps := GetTransitiveDeps(packPath)
 		for _, depSpec := range deps {
-			_, _ = UpdatePackage(depSpec)
+			_, _ = updatePackageInternal(depSpec, visited)
 		}
 	}
 

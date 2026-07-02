@@ -93,7 +93,7 @@ func BuildProject(root string, extraArgs []string) (string, error) {
 	if inputFile == "" {
 		ep, err := findEntrypoint(root)
 		if err != nil {
-			return "", &IOError{Path: filepath.Join(root, "main.vix"), Detail: "入口文件不存在"}
+			return "", err
 		}
 		inputFile = ep
 	}
@@ -119,7 +119,7 @@ func BuildProject(root string, extraArgs []string) (string, error) {
 			return "", &Compile{ExitCode: cmd2.ProcessState.ExitCode(), Output: strings.TrimSpace(string(out))}
 		}
 	} else {
-		cmd := exec.Command("vixc", inputFile)
+		cmd := exec.Command("vixc", inputFile, "-o", outputPath)
 		cmd.Args = append(cmd.Args, vixcFlags...)
 		cmd.Dir = root
 		if out, err := cmd.CombinedOutput(); err != nil {
